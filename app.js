@@ -163,6 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadStationData();
   initServiceWorker();
   
+  // Geolocation automàtica en obrir la pàgina
+  autoLocateOnStartup();
+
   // Set up auto-refresh
   setInterval(() => {
     refreshData(true);
@@ -479,17 +482,17 @@ function updateFavoritesBadge() {
 // ==========================================================================
 // User Geolocation & Center Map Controls
 // ==========================================================================
-function centerOnUserLocation() {
+function centerOnUserLocation(silent = false) {
   const btn = document.getElementById('btn-map-locate');
-  if (btn) btn.classList.add('locating');
+  if (btn && !silent) btn.classList.add('locating');
 
   if (!navigator.geolocation) {
-    showToast('El teu navegador no suporta la geolocalització');
+    if (!silent) showToast('El teu navegador no suporta la geolocalització');
     if (btn) btn.classList.remove('locating');
     return;
   }
 
-  showToast('Obtenint la teva ubicació...');
+  if (!silent) showToast('Obtenint la teva ubicació...');
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
@@ -515,16 +518,28 @@ function centerOnUserLocation() {
         state.userMarker.setLatLng([latitude, longitude]);
       }
 
-      state.map.flyTo([latitude, longitude], 17, { duration: 1.2 });
-      showToast('Centrat a la teva ubicació actual');
+      state.map.flyTo([latitude, longitude], 16, { duration: silent ? 0.8 : 1.2 });
+      if (!silent) showToast('Centrat a la teva ubicació actual');
+
+      if (state.stations && state.stations.length > 0) {
+        state.stations.forEach(s => {
+          s.distanceMeters = getDistanceMeters(latitude, longitude, s.lat, s.lon);
+        });
+      }
     },
     (err) => {
       if (btn) btn.classList.remove('locating');
-      console.warn('Geolocation error:', err);
-      showToast('No s\'ha pogut accedir a la teva ubicació');
+      if (!silent) {
+        console.warn('Geolocation error:', err);
+        showToast('No s\'ha pogut accedir a la teva ubicació');
+      }
     },
-    { enableHighAccuracy: true, timeout: 8000 }
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
   );
+}
+
+function autoLocateOnStartup() {
+  centerOnUserLocation(true);
 }
 
 function findNearbyStations() {
@@ -823,7 +838,7 @@ function bindUIEvents() {
   });
 
   // Floating Map Controls (GPS Location & Rotation)
-  document.getElementById('btn-map-locate')?.addEventListener('click', centerOnUserLocation);
+  document.getElementById('btn-map-locate')?.addEventListener('click', () => centerOnUserLocation(false));
   document.getElementById('btn-map-compass')?.addEventListener('click', resetMapOrientation);
 
   // Layers Modal Close Buttons
@@ -886,8 +901,13 @@ function setActiveNavBtn(btnId) {
 
 function goHome() {
   if (isDrawerOpen()) closeDrawer();
-  state.map.flyTo(CONFIG.defaultCenter, CONFIG.defaultZoom, { duration: 1.2 });
-  showToast('Mapa centrat a Girona');
+  if (state.userLocation) {
+    state.map.flyTo([state.userLocation.lat, state.userLocation.lon], 16, { duration: 1.1 });
+    showToast('Centrat a la teva ubicació actual');
+  } else {
+    state.map.flyTo(CONFIG.defaultCenter, CONFIG.defaultZoom, { duration: 1.2 });
+    showToast('Mapa centrat a Girona');
+  }
 }
 
 // Toast helper
