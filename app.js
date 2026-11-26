@@ -11,12 +11,94 @@ const CONFIG = {
   localDataUrl: 'stations.json',
   refreshIntervalMs: 60000, // Auto-refresh every 60s
   favStorageKey: 'girocleta_user_favorites',
-  prefsStorageKey: 'girocleta_user_prefs'
+  prefsStorageKey: 'girocleta_user_prefs',
+  mapLayerStorageKey: 'girocleta_map_layer'
+};
+
+// Available Base Map Layers with high visual quality and 100% free access
+const MAP_LAYERS = {
+  voyager: {
+    id: 'voyager',
+    name: 'CartoDB Voyager',
+    desc: 'Clar, modern i detallat. Ideal per a navegació urbana amb bici.',
+    badge: 'Recomanat',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    options: {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    },
+    previewClass: 'preview-voyager'
+  },
+  positron: {
+    id: 'positron',
+    name: 'CartoDB Positron',
+    desc: 'Gris minimalista molt net. Ressalta al màxim els marcadors de la Girocleta.',
+    badge: 'Minimalista',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    options: {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    },
+    previewClass: 'preview-positron'
+  },
+  dark: {
+    id: 'dark',
+    name: 'CartoDB Dark Matter',
+    desc: 'Mode fosc elegant i d\'alt contrast per a la nit.',
+    badge: 'Mode Fosc',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    options: {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    },
+    previewClass: 'preview-dark'
+  },
+  osm: {
+    id: 'osm',
+    name: 'OpenStreetMap Clàssic',
+    desc: 'El mapa cartogràfic col·laboratiu amb tot el detall de carrers i noms.',
+    badge: 'Clàssic',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    },
+    previewClass: 'preview-osm'
+  },
+  esri: {
+    id: 'esri',
+    name: 'Esri Satèl·lit',
+    desc: 'Ortofoto i imatges aèries reals en alta resolució per veure Girona des de l\'aire.',
+    badge: 'Satèl·lit',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    options: {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+      maxZoom: 19
+    },
+    previewClass: 'preview-esri'
+  },
+  opentopo: {
+    id: 'opentopo',
+    name: 'OpenTopoMap (Relleu)',
+    desc: 'Mapa topogràfic amb corbes de nivell i relleu del terreny de Girona.',
+    badge: 'Topogràfic',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    options: {
+      attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> | Style: OpenTopoMap',
+      maxZoom: 17
+    },
+    previewClass: 'preview-opentopo'
+  }
 };
 
 // Application State
 const state = {
   map: null,
+  currentTileLayer: null,
+  currentLayerKey: localStorage.getItem(CONFIG.mapLayerStorageKey) || 'voyager',
   stations: [],
   stationMarkers: {},
   userMarker: null,
@@ -53,23 +135,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Initialize Leaflet Map with CartoDB Voyager tiles
+ * Initialize Leaflet Map with rotation and dynamic tile layers
  */
 function initMap() {
   state.map = L.map('map', {
     zoomControl: false,
     minZoom: 12,
-    maxZoom: 19
+    maxZoom: 19,
+    rotate: true,
+    touchRotate: true,
+    shiftKeyRotate: true,
+    bearing: 0,
+    rotateControl: false
   }).setView(CONFIG.defaultCenter, CONFIG.defaultZoom);
 
-  // Free, high-reliability OpenStreetMap tile layer (100% free, no API key required)
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-    maxZoom: 19
-  }).addTo(state.map);
+  // Apply saved or default tile layer
+  applyTileLayer(state.currentLayerKey, false);
 
   // Zoom control in bottom right
   L.control.zoom({ position: 'bottomright' }).addTo(state.map);
+
+  // Listen to map rotation changes to update compass needle
+  state.map.on('rotate', updateCompassUI);
+
+  // Expose global references for convenience & debugging
+  window.giroMap = state.map;
+  window.state = state;
 
   // Click on map closes open drawer on mobile
   state.map.on('click', () => {
@@ -638,6 +729,28 @@ function bindUIEvents() {
     openPreferencesModal();
   });
 
+  // 6. Map Layers Switcher Button
+  document.getElementById('btn-nav-layers')?.addEventListener('click', () => {
+    setActiveNavBtn('btn-nav-layers');
+    openLayersModal();
+  });
+
+  // Map Compass Needle (Click to return to North)
+  document.getElementById('btn-map-compass')?.addEventListener('click', resetMapOrientation);
+
+  // Layers Modal Close Buttons
+  document.getElementById('btn-close-layers')?.addEventListener('click', closeLayersModal);
+  document.getElementById('modal-layers-overlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-layers-overlay') closeLayersModal();
+  });
+
+  // iOS Safari Guide Modal Close Buttons
+  document.getElementById('btn-close-ios-guide')?.addEventListener('click', closeIOSGuideModal);
+  document.getElementById('btn-dismiss-ios-guide')?.addEventListener('click', closeIOSGuideModal);
+  document.getElementById('modal-ios-guide-overlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-ios-guide-overlay') closeIOSGuideModal();
+  });
+
   // Refresh Button
   document.getElementById('btn-refresh')?.addEventListener('click', () => refreshData(false));
 
@@ -701,6 +814,126 @@ function showToast(msg) {
   toastTimer = setTimeout(() => {
     toast.classList.remove('show');
   }, 2800);
+}
+
+// ==========================================================================
+// Base Map Layers Controller & Customization
+// ==========================================================================
+function applyTileLayer(layerKey, notify = true) {
+  const layerCfg = MAP_LAYERS[layerKey] || MAP_LAYERS.voyager;
+  const actualKey = MAP_LAYERS[layerKey] ? layerKey : 'voyager';
+
+  if (state.currentTileLayer && state.map.hasLayer(state.currentTileLayer)) {
+    state.map.removeLayer(state.currentTileLayer);
+  }
+
+  state.currentTileLayer = L.tileLayer(layerCfg.url, layerCfg.options).addTo(state.map);
+  if (state.currentTileLayer.bringToBack) {
+    state.currentTileLayer.bringToBack();
+  }
+
+  state.currentLayerKey = actualKey;
+  localStorage.setItem(CONFIG.mapLayerStorageKey, actualKey);
+
+  renderLayersGrid();
+
+  if (notify) {
+    showToast(`Mapa canviat a: ${layerCfg.name}`);
+  }
+}
+
+function openLayersModal() {
+  renderLayersGrid();
+  const overlay = document.getElementById('modal-layers-overlay');
+  if (overlay) {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeLayersModal() {
+  const overlay = document.getElementById('modal-layers-overlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+  if (document.getElementById('btn-nav-layers')?.classList.contains('active')) {
+    setActiveNavBtn('btn-nav-home');
+  }
+}
+
+function renderLayersGrid() {
+  const grid = document.getElementById('map-layers-grid');
+  if (!grid) return;
+
+  grid.innerHTML = Object.values(MAP_LAYERS).map(l => {
+    const isActive = l.id === state.currentLayerKey;
+    return `
+      <div class="layer-card ${isActive ? 'active' : ''}" data-layer="${l.id}" onclick="selectMapLayer('${l.id}')">
+        <div class="layer-preview-thumbnail ${l.previewClass}">
+          <div class="layer-preview-badge">${l.badge}</div>
+          <div class="layer-active-indicator"><i class="fa-solid fa-circle-check"></i> Actiu</div>
+        </div>
+        <div class="layer-card-body">
+          <div class="layer-card-title">${l.name}</div>
+          <div class="layer-card-desc">${l.desc}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.selectMapLayer = function(layerKey) {
+  applyTileLayer(layerKey, true);
+};
+
+// ==========================================================================
+// Map Rotation & Compass
+// ==========================================================================
+function updateCompassUI() {
+  const compassBtn = document.getElementById('btn-map-compass');
+  const dial = document.getElementById('compass-dial');
+  if (!state.map || !compassBtn || !dial) return;
+
+  const bearing = (typeof state.map.getBearing === 'function') ? state.map.getBearing() : 0;
+  dial.style.transform = `rotate(${-bearing}deg)`;
+
+  const isRotated = Math.abs(bearing) > 0.5;
+  compassBtn.classList.toggle('has-rotation', isRotated);
+}
+
+function resetMapOrientation() {
+  if (state.map && typeof state.map.setBearing === 'function') {
+    state.map.setBearing(0);
+    showToast('Mapa orientat al Nord');
+  }
+}
+
+// ==========================================================================
+// iOS Safari Web Push Support & Guide Modal
+// ==========================================================================
+function isIOSDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+function isStandalonePWA() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function openIOSGuideModal() {
+  const overlay = document.getElementById('modal-ios-guide-overlay');
+  if (overlay) {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeIOSGuideModal() {
+  const overlay = document.getElementById('modal-ios-guide-overlay');
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
 }
 
 // ==========================================================================
@@ -881,7 +1114,8 @@ function updatePermissionBanner() {
   const desc = document.getElementById('perm-status-desc');
   if (!banner || !btn) return;
 
-  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  const hasNotif = ('Notification' in window);
+  const perm = hasNotif ? Notification.permission : 'unsupported';
   banner.className = 'pref-permission-banner ' + perm;
 
   if (perm === 'granted') {
@@ -892,16 +1126,32 @@ function updatePermissionBanner() {
     title.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;"></i> Permís blocat al navegador';
     desc.textContent = 'Has denegat les notificacions. Activa-les als paràmetres del navegador si vols avisos.';
     btn.style.display = 'none';
+  } else if (perm === 'unsupported') {
+    if (isIOSDevice() && !isStandalonePWA()) {
+      title.innerHTML = '<i class="fa-brands fa-apple" style="color:#1e293b;"></i> Requeriment a l\'iPhone / iPad';
+      desc.textContent = 'A Safari cal afegir la Girocleta a la pantalla d\'inici per activar notificacions push.';
+      btn.style.display = 'inline-flex';
+      btn.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> Com activar a l\'iPhone';
+    } else {
+      title.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Sense suport de notificacions';
+      desc.textContent = 'Aquest navegador no admet notificacions push web.';
+      btn.style.display = 'none';
+    }
   } else {
     title.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Permís del navegador';
     desc.textContent = 'Cal concedir permís per rebre notificacions push al teu dispositiu.';
     btn.style.display = 'inline-flex';
+    btn.innerHTML = '<i class="fa-solid fa-bell"></i> Activa el permís';
   }
 }
 
 function requestNotificationPermission() {
   if (!('Notification' in window)) {
-    alert('Aquest navegador no té suport per a la Notification API.');
+    if (isIOSDevice() && !isStandalonePWA()) {
+      openIOSGuideModal();
+      return;
+    }
+    showToast('Aquest navegador no admet la Notification API.');
     return;
   }
   Notification.requestPermission().then((permission) => {
@@ -1120,13 +1370,24 @@ function bindPreferencesEvents() {
 
 // Send Test Notification Now
 function sendTestNotification() {
-  if ('Notification' in window && Notification.permission !== 'granted') {
+  if (!('Notification' in window)) {
+    if (isIOSDevice() && !isStandalonePWA()) {
+      openIOSGuideModal();
+      return;
+    }
+    showToast('Aquest navegador no admet notificacions push.');
+    executeTestNotification(); // Mostra el toast interactiu de prova
+    return;
+  }
+
+  if (Notification.permission !== 'granted') {
     Notification.requestPermission().then(perm => {
       updatePermissionBanner();
       if (perm === 'granted') {
         executeTestNotification();
       } else {
-        alert('Cal concedir permís al navegador per poder enviar la notificació de prova.');
+        showToast('Cal autoritzar el permís per rebre la notificació al sistema.');
+        executeTestNotification(); // Mostra igualment el toast com a simulació
       }
     });
   } else {

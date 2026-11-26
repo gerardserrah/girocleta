@@ -81,6 +81,12 @@
         <span>Alertes</span>
         <span class="badge" id="alert-active-badge" style="display:none; background:#006837;" title="Alertes actives"><i class="fa-solid fa-check" style="font-size:8px;"></i></span>
       </button>
+
+      <!-- 6. Selector de Capes de Mapa -->
+      <button id="btn-nav-layers" class="nav-btn" title="Canviar estil i disseny del mapa">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Capes</span>
+      </button>
     </nav>
   </header>
 
@@ -114,6 +120,15 @@
       <div class="legend-item" style="border-left:1px solid #cbd5e1; padding-left:8px;"><span class="legend-dot" style="background:#2563eb;"></span> <i class="fa-solid fa-square-parking" style="font-size:10px;"></i> Llocs</div>
     </div>
   </aside>
+
+  <!-- Floating Compass Button for Map Rotation -->
+  <button id="btn-map-compass" class="compass-btn-floating" title="Orientació del mapa (Prem per tornar al Nord)" aria-label="Restablir orientació al Nord">
+    <div class="compass-dial" id="compass-dial">
+      <span class="compass-needle-n">▲</span>
+      <span class="compass-needle-s">▼</span>
+    </div>
+    <span class="compass-label">N</span>
+  </button>
 
   <!-- Side Drawer / Panel for Station List & Nearby -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
@@ -356,11 +371,89 @@
     </div>
   </div>
 
+  <!-- Modal Selector Visual de Capes de Mapa -->
+  <div class="modal-overlay" id="modal-layers-overlay" aria-hidden="true">
+    <div class="modal-card modal-card-layers" id="modal-layers-card" role="dialog" aria-labelledby="modal-layers-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 id="modal-layers-title"><i class="fa-solid fa-layer-group" style="color:var(--primary-green);"></i> Estils de Mapa</h2>
+          <span class="modal-subtitle">Tria el mapa que t'agradi més visualment (es desa al navegador)</span>
+        </div>
+        <button class="btn-close-modal" id="btn-close-layers" aria-label="Tancar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="map-layers-grid" id="map-layers-grid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Guia Notificacions iOS / iPhone Safari -->
+  <div class="modal-overlay" id="modal-ios-guide-overlay" aria-hidden="true">
+    <div class="modal-card modal-card-ios" id="modal-ios-card" role="dialog" aria-labelledby="ios-guide-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 id="ios-guide-title"><i class="fa-brands fa-apple" style="font-size:20px; color:#1e293b;"></i> Notificacions a l'iPhone (iOS)</h2>
+          <span class="modal-subtitle">Com activar els avisos push a Safari</span>
+        </div>
+        <button class="btn-close-modal" id="btn-close-ios-guide" aria-label="Tancar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="ios-guide-box">
+          <p class="ios-guide-intro">
+            A l'iPhone i l'iPad, Safari només activa les notificacions push web un cop la webapp s'ha afegit a la <strong>pantalla d'inici</strong>:
+          </p>
+
+          <div class="ios-steps-list">
+            <div class="ios-step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <strong>Toca el botó Compartir</strong>
+                <span>A la barra inferior de Safari, prem el botó de compartir <i class="fa-solid fa-arrow-up-from-bracket" style="color:#0284c7;"></i>.</span>
+              </div>
+            </div>
+
+            <div class="ios-step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <strong>Afegeix a la pantalla d'inici</strong>
+                <span>Fes una mica d'scroll avall i toca <i class="fa-regular fa-square-plus" style="color:#16a34a;"></i> <strong>«Afegeix a la pantalla d'inici»</strong>.</span>
+              </div>
+            </div>
+
+            <div class="ios-step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <strong>Obre la Girocleta des de l'escriptori</strong>
+                <span>Prem la icona de la Girocleta a la teva pantalla d'inici. Des d'allà les notificacions push seran 100% operatives com una aplicació nativa!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button type="button" class="btn-modal-save" id="btn-dismiss-ios-guide">
+          Entesos!
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- User Location Prompt / Toast Notification -->
   <div class="toast-notification" id="toast"></div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Leaflet Rotate Plugin (Suport rotació lliure del mapa) -->
+  <script src="leaflet-rotate.js"></script>
   <!-- Application JS -->
   <script src="app.js"></script>
 </body>
