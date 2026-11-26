@@ -1828,6 +1828,11 @@ input:checked + .slider:before {
 }
 
 /* Gradient Preview Fallbacks for Map Thumbnails */
+.preview-positron {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+  background-image: radial-gradient(#64748b 1px, transparent 1px), linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  background-size: 14px 14px, 100% 100%;
+}
 .preview-cyclosm {
   background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
   background-image: radial-gradient(#16a34a 1.5px, transparent 1.5px), linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);

@@ -17,11 +17,20 @@ const CONFIG = {
 
 // Available Base Map Layers: 100% free, high reliability, zero API key required
 const MAP_LAYERS = {
+  positron: {
+    id: 'positron',
+    type: 'maplibre',
+    name: 'Positron GL (OpenMapTiles)',
+    desc: 'L\'estil vectorial Positron GL: disseny nítid, clar i minimalista. Ressalta al màxim les estacions de Girocleta.',
+    badge: 'Per Defecte',
+    styleUrl: 'https://tiles.openfreemap.org/styles/positron',
+    previewClass: 'preview-positron'
+  },
   cyclosm: {
     id: 'cyclosm',
     name: 'CyclOSM (Bicicletes & Carrils)',
     desc: 'Creat especialment per a ciclistes: destaca clarament els carrils bici de Girona, vies verdes i carrers 30.',
-    badge: 'Recomanat Girocleta',
+    badge: 'Ciclisme',
     url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
     options: {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> | <a href="https://www.cyclosm.org" target="_blank" rel="noopener">CyclOSM</a>',
@@ -105,24 +114,18 @@ const MAP_LAYERS = {
   }
 };
 
-// Automatic migration for old CartoDB layer keys that require API keys
+// Automatic migration & default to Positron GL style
 function getInitialMapLayerKey() {
   const saved = localStorage.getItem(CONFIG.mapLayerStorageKey);
-  if (!saved || saved === 'voyager' || !MAP_LAYERS[saved]) {
-    localStorage.setItem(CONFIG.mapLayerStorageKey, 'cyclosm');
-    return 'cyclosm';
+  const hasMigrated = localStorage.getItem('girocleta_positron_migrated_v1');
+  if (!hasMigrated) {
+    localStorage.setItem('girocleta_positron_migrated_v1', 'true');
+    localStorage.setItem(CONFIG.mapLayerStorageKey, 'positron');
+    return 'positron';
   }
-  if (saved === 'positron') {
-    localStorage.setItem(CONFIG.mapLayerStorageKey, 'osm_hot');
-    return 'osm_hot';
-  }
-  if (saved === 'dark') {
-    localStorage.setItem(CONFIG.mapLayerStorageKey, 'esri_dark');
-    return 'esri_dark';
-  }
-  if (saved === 'esri') {
-    localStorage.setItem(CONFIG.mapLayerStorageKey, 'esri_satellite');
-    return 'esri_satellite';
+  if (!saved || !MAP_LAYERS[saved]) {
+    localStorage.setItem(CONFIG.mapLayerStorageKey, 'positron');
+    return 'positron';
   }
   return saved;
 }
@@ -855,11 +858,10 @@ function showToast(msg) {
 function applyTileLayer(layerKey, notify = true) {
   let actualKey = layerKey;
   if (!MAP_LAYERS[actualKey]) {
-    if (actualKey === 'voyager') actualKey = 'cyclosm';
-    else if (actualKey === 'positron') actualKey = 'osm_hot';
+    if (actualKey === 'voyager') actualKey = 'positron';
     else if (actualKey === 'dark') actualKey = 'esri_dark';
     else if (actualKey === 'esri') actualKey = 'esri_satellite';
-    else actualKey = 'cyclosm';
+    else actualKey = 'positron';
   }
   const layerCfg = MAP_LAYERS[actualKey];
 
@@ -867,8 +869,15 @@ function applyTileLayer(layerKey, notify = true) {
     state.map.removeLayer(state.currentTileLayer);
   }
 
-  state.currentTileLayer = L.tileLayer(layerCfg.url, layerCfg.options).addTo(state.map);
-  if (state.currentTileLayer.bringToBack) {
+  if (layerCfg.type === 'maplibre' && typeof L.maplibreGL === 'function') {
+    state.currentTileLayer = L.maplibreGL({
+      style: layerCfg.styleUrl
+    }).addTo(state.map);
+  } else {
+    state.currentTileLayer = L.tileLayer(layerCfg.url, layerCfg.options).addTo(state.map);
+  }
+
+  if (state.currentTileLayer && state.currentTileLayer.bringToBack) {
     state.currentTileLayer.bringToBack();
   }
 
