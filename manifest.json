@@ -1,0 +1,23 @@
+{
+  "name": "Girocleta - Mapa d'Estacions en Temps Real",
+  "short_name": "Girocleta",
+  "description": "Visualització interactiva en temps real de les bicicletes i aparcaments de Girocleta a Girona amb alertes i notificacions personalitzades.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#006837",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "girocleta_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "girocleta-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

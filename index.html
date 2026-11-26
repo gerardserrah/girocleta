@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Girocleta - Mapa d'Estacions en Temps Real</title>
+  <meta name="description" content="Visualització moderna i a pantalla completa de les estacions de Girocleta a Girona amb dades en directe.">
+  <link rel="icon" type="image/svg+xml" href="girocleta-logo.svg">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <!-- Custom CSS -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#006837">
+  <link rel="apple-touch-icon" href="girocleta_logo.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Fullscreen Map Container -->
+  <div id="map"></div>
+
+  <!-- Top Floating Header & Navigation Island -->
+  <header class="header-floating">
+    <!-- Top Row: Brand & Live Status -->
+    <div class="header-top">
+      <div class="brand-container" id="btn-brand-home" title="Girocleta Girona">
+        <img src="girocleta-logo.svg" alt="Girocleta" class="brand-logo" />
+      </div>
+
+      <div class="header-status">
+        <div class="status-indicator" id="live-indicator" title="Estat de la connexió">
+          <span class="status-dot"></span>
+          <span class="status-text" id="status-text">Actualitzant...</span>
+        </div>
+        <button id="btn-refresh" class="btn-icon" title="Refrescar dades en temps real" aria-label="Refrescar">
+          <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Row: Navigation Action Buttons -->
+    <nav class="action-nav">
+      <!-- 1. Home / Centrar -->
+      <button id="btn-nav-home" class="nav-btn active" title="Centrar el mapa a Girona">
+        <i class="fa-solid fa-house"></i>
+        <span>Home</span>
+      </button>
+
+      <!-- 2. Estacions Preferides -->
+      <button id="btn-nav-favorites" class="nav-btn" title="Veure estacions guardades com a preferides">
+        <i class="fa-solid fa-star"></i>
+        <span>Preferides</span>
+        <span class="badge" id="fav-count-badge" style="display:none;">0</span>
+      </button>
+
+      <!-- 3. Llistat d'Estacions -->
+      <button id="btn-nav-list" class="nav-btn" title="Veure llistat complet de totes les estacions">
+        <i class="fa-solid fa-list-ul"></i>
+        <span>Llistat</span>
+      </button>
+
+      <!-- 4. Estacions Més Properes -->
+      <button id="btn-nav-nearby" class="nav-btn" title="Cercar estacions més a prop de la teva ubicació">
+        <i class="fa-solid fa-location-crosshairs"></i>
+        <span>Més properes</span>
+      </button>
+
+      <!-- 5. Alertes & Personalització -->
+      <button id="btn-nav-alerts" class="nav-btn" title="Configurar alertes i notificacions push personalitzades">
+        <i class="fa-solid fa-bell"></i>
+        <span>Alertes</span>
+        <span class="badge" id="alert-active-badge" style="display:none; background:#006837;" title="Alertes actives"><i class="fa-solid fa-check" style="font-size:8px;"></i></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Floating Quick Stats Bar (Bottom Left) -->
+  <aside class="quick-stats-pill" id="quick-stats" aria-label="Resum de disponibilitat">
+    <div class="stat-item">
+      <span class="stat-label"><i class="fa-solid fa-bicycle"></i> Bicis:</span>
+      <span class="stat-val bikes-color" id="total-bikes">-</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-label"><i class="fa-solid fa-square-parking"></i> Llocs:</span>
+      <span class="stat-val slots-color" id="total-slots">-</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-label"><i class="fa-solid fa-map-pin"></i> Estacions:</span>
+      <span class="stat-val" id="total-stations">36</span>
+    </div>
+  </aside>
+
+  <!-- Map Legend (Bottom Right) -->
+  <aside class="map-legend" id="map-legend">
+    <div class="legend-header">
+      <span>Llegenda marcadors</span>
+    </div>
+    <div class="legend-items">
+      <div class="legend-item"><span class="legend-dot green"></span> <i class="fa-solid fa-bicycle" style="font-size:10px;"></i> > 5 bicis</div>
+      <div class="legend-item"><span class="legend-dot yellow"></span> <i class="fa-solid fa-bicycle" style="font-size:10px;"></i> 1 - 4</div>
+      <div class="legend-item"><span class="legend-dot red"></span> <i class="fa-solid fa-bicycle" style="font-size:10px;"></i> 0</div>
+      <div class="legend-item" style="border-left:1px solid #cbd5e1; padding-left:8px;"><span class="legend-dot" style="background:#2563eb;"></span> <i class="fa-solid fa-square-parking" style="font-size:10px;"></i> Llocs</div>
+    </div>
+  </aside>
+
+  <!-- Side Drawer / Panel for Station List & Nearby -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="side-drawer" id="side-drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <h2 id="drawer-title"><i class="fa-solid fa-list-ul"></i> Llistat d'estacions</h2>
+        <span class="drawer-subtitle" id="drawer-subtitle">36 estacions a Girona</span>
+      </div>
+      <button class="btn-close-drawer" id="btn-close-drawer" aria-label="Tancar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="drawer-controls">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="station-search" placeholder="Cercar per nom, carrer o número..." autocomplete="off">
+        <button id="clear-search" class="clear-search-btn" style="display:none;" title="Esborrar cerca">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="filter-tab active" data-filter="all">Totes (<span id="count-all">36</span>)</button>
+        <button class="filter-tab" data-filter="has-bikes">Amb bicis (<span id="count-bikes">-</span>)</button>
+        <button class="filter-tab" data-filter="has-slots">Amb lloc (<span id="count-slots">-</span>)</button>
+        <button class="filter-tab" data-filter="favs">Preferides (<span id="count-favs">0</span>)</button>
+      </div>
+    </div>
+
+    <!-- Stations List Items -->
+    <div class="drawer-content" id="stations-list-container">
+      <div class="stations-list" id="stations-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- Modal de Personalització i Alertes Push -->
+  <div class="modal-overlay" id="modal-prefs-overlay" aria-hidden="true">
+    <div class="modal-card" id="modal-prefs-card" role="dialog" aria-labelledby="modal-prefs-title">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2 id="modal-prefs-title"><i class="fa-solid fa-bell" style="color:var(--primary-green);"></i> Personalització & Alertes</h2>
+          <span class="modal-subtitle">Configura avisos push per a les teves estacions preferides</span>
+        </div>
+        <button class="btn-close-modal" id="btn-close-prefs" aria-label="Tancar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Permís de Notificacions -->
+        <div class="pref-permission-banner" id="pref-perm-banner">
+          <div class="perm-info">
+            <span class="perm-title" id="perm-status-title"><i class="fa-solid fa-shield-halved"></i> Permís del navegador</span>
+            <span class="perm-desc" id="perm-status-desc">Cal concedir permís per rebre notificacions push al teu dispositiu.</span>
+          </div>
+          <button type="button" class="btn-perm-request" id="btn-request-perm">
+            <i class="fa-solid fa-bell"></i> Activa el permís
+          </button>
+        </div>
+
+        <!-- Toggle General Notificacions -->
+        <div class="pref-section pref-toggle-row">
+          <div class="pref-label-group">
+            <span class="pref-label">Rebre Notificacions Push</span>
+            <span class="pref-hint">Avisos periòdics amb bicis disponibles i aparcaments lliures</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-notifs-active">
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <!-- Contingut de la configuració (actiu quan toggle activat) -->
+        <div class="pref-config-container" id="pref-config-container">
+          
+          <!-- Secció 1: De quina o quines estacions? -->
+          <div class="pref-section">
+            <div class="pref-section-title">
+              <i class="fa-solid fa-map-pin"></i> 1. Estacions a monitoritzar
+            </div>
+            
+            <div class="segmented-control" id="seg-target-mode">
+              <button type="button" class="seg-btn active" data-target="favorites" id="seg-btn-favs">
+                <i class="fa-solid fa-star" style="color:#f59e0b;"></i> Totes les preferides (<span id="pref-fav-count">0</span>)
+              </button>
+              <button type="button" class="seg-btn" data-target="custom" id="seg-btn-custom">
+                <i class="fa-solid fa-list-check"></i> Selecció manual (<span id="pref-custom-count">0</span>)
+              </button>
+            </div>
+
+            <!-- Selecció manual d'estacions -->
+            <div class="pref-custom-stations" id="pref-custom-stations" style="display:none;">
+              <div class="search-mini">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="pref-station-search" placeholder="Cercar estació...">
+              </div>
+              <div class="station-checkbox-grid" id="pref-stations-grid">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Secció 2: Quan / Horari -->
+          <div class="pref-section">
+            <div class="pref-section-title">
+              <i class="fa-solid fa-clock"></i> 2. Quan vols rebre la notificació?
+            </div>
+
+            <div class="segmented-control" id="seg-schedule-mode">
+              <button type="button" class="seg-btn active" data-schedule="times" id="seg-btn-times">
+                <i class="fa-regular fa-clock"></i> Hores fixes
+              </button>
+              <button type="button" class="seg-btn" data-schedule="interval" id="seg-btn-interval">
+                <i class="fa-solid fa-repeat"></i> Interval periòdic
+              </button>
+            </div>
+
+            <!-- Hores fixes -->
+            <div id="pref-schedule-times-panel" class="pref-subpanel">
+              <div class="time-chips-container" id="time-chips-container">
+                <!-- Chips like 08:00, 14:00, 19:00 -->
+              </div>
+              <div class="add-time-row">
+                <input type="time" id="new-time-input" value="08:00" class="time-picker-input">
+                <button type="button" class="btn-add-time" id="btn-add-time">
+                  <i class="fa-solid fa-plus"></i> Afegir hora
+                </button>
+              </div>
+            </div>
+
+            <!-- Interval periòdic -->
+            <div id="pref-schedule-interval-panel" class="pref-subpanel" style="display:none;">
+              <div class="interval-options">
+                <label class="interval-pill">
+                  <input type="radio" name="interval-option" value="15">
+                  <span>Cada 15 min</span>
+                </label>
+                <label class="interval-pill">
+                  <input type="radio" name="interval-option" value="30" checked>
+                  <span>Cada 30 min</span>
+                </label>
+                <label class="interval-pill">
+                  <input type="radio" name="interval-option" value="60">
+                  <span>Cada hora</span>
+                </label>
+              </div>
+              <div class="interval-range-row">
+                <label class="range-label">Franja activa del dia:</label>
+                <div class="range-inputs">
+                  <span>De</span>
+                  <input type="time" id="interval-start" value="07:30" class="time-picker-input">
+                  <span>a</span>
+                  <input type="time" id="interval-end" value="21:30" class="time-picker-input">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secció 3: Amb quina repetició de dies? -->
+          <div class="pref-section">
+            <div class="pref-section-title">
+              <i class="fa-solid fa-calendar-days"></i> 3. Repetició de dies
+            </div>
+            <div class="segmented-control" id="seg-days-mode">
+              <button type="button" class="seg-btn active" data-days="weekdays" id="seg-btn-weekdays">
+                Laborables (Dll - Dv)
+              </button>
+              <button type="button" class="seg-btn" data-days="all" id="seg-btn-all">
+                Tots els dies
+              </button>
+              <button type="button" class="seg-btn" data-days="weekends" id="seg-btn-weekends">
+                Caps de setmana
+              </button>
+            </div>
+          </div>
+
+          <!-- Secció 4: Filtres opcionals -->
+          <div class="pref-section">
+            <div class="pref-section-title">
+              <i class="fa-solid fa-filter"></i> 4. Condicions d'alerta (Opcional)
+            </div>
+            <div class="filter-condition-row">
+              <label class="checkbox-label">
+                <input type="checkbox" id="check-low-bikes">
+                <span>Avisar només si queden menys de:</span>
+              </label>
+              <div class="threshold-input-wrap">
+                <input type="number" id="num-min-bikes" min="1" max="15" value="3" class="num-mini">
+                <span>bicis</span>
+              </div>
+            </div>
+            <div class="filter-condition-row">
+              <label class="checkbox-label">
+                <input type="checkbox" id="check-low-slots">
+                <span>Avisar només si queden menys de:</span>
+              </label>
+              <div class="threshold-input-wrap">
+                <input type="number" id="num-min-slots" min="1" max="15" value="3" class="num-mini">
+                <span>llocs lliures</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Previsualització en viu de la Notificació -->
+          <div class="pref-section">
+            <div class="pref-section-title">
+              <i class="fa-solid fa-mobile-screen"></i> Previsualització de l'avís
+            </div>
+            <div class="notification-preview-card" id="notif-preview-card">
+              <div class="notif-prev-header">
+                <img src="girocleta-logo.svg" alt="Girocleta" class="notif-prev-icon">
+                <div class="notif-prev-app-name">Girocleta Girona</div>
+                <div class="notif-prev-time">ara mateix</div>
+              </div>
+              <div class="notif-prev-title" id="notif-prev-title">🚲 Girocleta: 03- Plaça de Catalunya</div>
+              <div class="notif-prev-body" id="notif-prev-body">
+                🚲 <strong>14 bicis disponibles</strong> &nbsp;|&nbsp; 🅿️ <strong>12 llocs lliures</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer amb botons -->
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-test" id="btn-test-notif">
+          <i class="fa-solid fa-paper-plane"></i> Envia prova ara
+        </button>
+        <button type="button" class="btn-modal-save" id="btn-save-prefs">
+          <i class="fa-solid fa-check"></i> Desar preferències
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Location Prompt / Toast Notification -->
+  <div class="toast-notification" id="toast"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Application JS -->
+  <script src="app.js"></script>
+</body>
+</html>
