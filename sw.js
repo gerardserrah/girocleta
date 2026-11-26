@@ -1,5 +1,5 @@
 // Girocleta Service Worker for PWA, Offline Support & Push Notifications
-const CACHE_NAME = 'girocleta-v6';
+const CACHE_NAME = 'girocleta-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -12,16 +12,17 @@ const ASSETS_TO_CACHE = [
   './manifest.json'
 ];
 
-// Install Event
+// Install Event: Skip waiting immediately to activate newest code
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch(err => console.warn('Cache addAll warning:', err));
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// Activate Event
+// Activate Event: Claim clients and wipe previous caches immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -36,30 +37,27 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event (Network first for live API, cache fallback for assets)
+// Fetch Event: Network-first for all UI assets so updates are immediate, with offline cache fallback
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  
-  // Always fetch live data from network without caching
-  if (url.hostname.includes('citybik.es') || url.pathname.includes('stations.json')) {
+
+  // Live API for external CityBik data
+  if (url.hostname.includes('citybik.es')) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match('./stations.json'))
     );
     return;
   }
 
-  // Stale-while-revalidate for local UI assets
+  // Network-first for local assets
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networked = fetch(event.request).then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const cacheCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cacheCopy));
-        }
-        return response;
-      }).catch(() => cached);
-      return cached || networked;
-    })
+    fetch(event.request).then((response) => {
+      if (response && response.status === 200 && response.type === 'basic') {
+        const cacheCopy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cacheCopy));
+      }
+      return response;
+    }).catch(() => caches.match(event.request))
   );
 });
 

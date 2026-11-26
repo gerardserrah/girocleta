@@ -14,8 +14,6 @@
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <!-- MapLibre GL CSS (for Vector Positron GL Style) -->
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -24,7 +22,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#006837">
   <link rel="apple-touch-icon" href="girocleta_logo.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -84,53 +82,27 @@
         <span class="badge" id="alert-active-badge" style="display:none; background:#006837;" title="Alertes actives"><i class="fa-solid fa-check" style="font-size:8px;"></i></span>
       </button>
 
-      <!-- 6. Selector de Capes de Mapa -->
-      <button id="btn-nav-layers" class="nav-btn" title="Canviar estil i disseny del mapa">
-        <i class="fa-solid fa-layer-group"></i>
-        <span>Capes</span>
+      <!-- 6. Selector d'Estil de Mapa -->
+      <button id="btn-nav-layers" class="nav-btn" title="Canviar l'estil visual del mapa">
+        <i class="fa-solid fa-palette"></i>
+        <span>Estil</span>
       </button>
     </nav>
   </header>
 
-  <!-- Floating Quick Stats Bar (Bottom Left) -->
-  <aside class="quick-stats-pill" id="quick-stats" aria-label="Resum de disponibilitat">
-    <div class="stat-item">
-      <span class="stat-label"><i class="fa-solid fa-bicycle"></i> Bicis:</span>
-      <span class="stat-val bikes-color" id="total-bikes">-</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat-item">
-      <span class="stat-label"><i class="fa-solid fa-square-parking"></i> Llocs:</span>
-      <span class="stat-val slots-color" id="total-slots">-</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat-item">
-      <span class="stat-label"><i class="fa-solid fa-map-pin"></i> Estacions:</span>
-      <span class="stat-val" id="total-stations">36</span>
-    </div>
-  </aside>
-
-  <!-- Map Legend (Bottom Right) -->
-  <aside class="map-legend" id="map-legend">
-    <div class="legend-header">
-      <span>Llegenda marcadors</span>
-    </div>
-    <div class="legend-items">
-      <div class="legend-item"><span class="legend-dot green"></span> <i class="fa-solid fa-bicycle" style="font-size:10px;"></i> > 5 bicis</div>
-      <div class="legend-item"><span class="legend-dot yellow"></span> <i class="fa-solid fa-bicycle" style="font-size:10px;"></i> 1 - 4</div>
-      <div class="legend-item"><span class="legend-dot red"></span> <i class="fa-solid fa-bicycle" style="font-size:10px;"></i> 0</div>
-      <div class="legend-item" style="border-left:1px solid #cbd5e1; padding-left:8px;"><span class="legend-dot" style="background:#2563eb;"></span> <i class="fa-solid fa-square-parking" style="font-size:10px;"></i> Llocs</div>
-    </div>
-  </aside>
-
-  <!-- Floating Compass Button for Map Rotation -->
-  <button id="btn-map-compass" class="compass-btn-floating" title="Orientació del mapa (Prem per tornar al Nord)" aria-label="Restablir orientació al Nord">
-    <div class="compass-dial" id="compass-dial">
-      <span class="compass-needle-n">▲</span>
-      <span class="compass-needle-s">▼</span>
-    </div>
-    <span class="compass-label">N</span>
-  </button>
+  <!-- Floating Map Action Controls (GPS Location & Compass) -->
+  <div class="map-floating-controls" id="map-floating-controls">
+    <button id="btn-map-locate" class="map-btn-floating" title="La meva ubicació actual" aria-label="Centrar a la meva ubicació">
+      <i class="fa-solid fa-crosshairs"></i>
+    </button>
+    <button id="btn-map-compass" class="map-btn-floating compass-btn-floating" title="Orientació del mapa (Prem per tornar al Nord)" aria-label="Restablir orientació al Nord">
+      <div class="compass-dial" id="compass-dial">
+        <span class="compass-needle-n">▲</span>
+        <span class="compass-needle-s">▼</span>
+      </div>
+      <span class="compass-label">N</span>
+    </button>
+  </div>
 
   <!-- Side Drawer / Panel for Station List & Nearby -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
@@ -212,93 +184,35 @@
         <!-- Contingut de la configuració (actiu quan toggle activat) -->
         <div class="pref-config-container" id="pref-config-container">
           
-          <!-- Secció 1: De quina o quines estacions? -->
+          <!-- Horaris i Parades a monitoritzar -->
           <div class="pref-section">
-            <div class="pref-section-title">
-              <i class="fa-solid fa-map-pin"></i> 1. Estacions a monitoritzar
-            </div>
-            
-            <div class="segmented-control" id="seg-target-mode">
-              <button type="button" class="seg-btn active" data-target="favorites" id="seg-btn-favs">
-                <i class="fa-solid fa-star" style="color:#f59e0b;"></i> Totes les preferides (<span id="pref-fav-count">0</span>)
-              </button>
-              <button type="button" class="seg-btn" data-target="custom" id="seg-btn-custom">
-                <i class="fa-solid fa-list-check"></i> Selecció manual (<span id="pref-custom-count">0</span>)
-              </button>
-            </div>
-
-            <!-- Selecció manual d'estacions -->
-            <div class="pref-custom-stations" id="pref-custom-stations" style="display:none;">
-              <div class="search-mini">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="pref-station-search" placeholder="Cercar estació...">
+            <div class="pref-section-title-wrap">
+              <div class="pref-section-title">
+                <i class="fa-solid fa-clock"></i> Horaris i Estacions a monitoritzar
               </div>
-              <div class="station-checkbox-grid" id="pref-stations-grid">
-                <!-- Rendered dynamically -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Secció 2: Quan / Horari -->
-          <div class="pref-section">
-            <div class="pref-section-title">
-              <i class="fa-solid fa-clock"></i> 2. Quan vols rebre la notificació?
+              <p class="pref-section-subtitle">A cada hora programada pots triar quina o quines estacions vols rebre a la notificació.</p>
             </div>
 
-            <div class="segmented-control" id="seg-schedule-mode">
-              <button type="button" class="seg-btn active" data-schedule="times" id="seg-btn-times">
-                <i class="fa-regular fa-clock"></i> Hores fixes
-              </button>
-              <button type="button" class="seg-btn" data-schedule="interval" id="seg-btn-interval">
-                <i class="fa-solid fa-repeat"></i> Interval periòdic
-              </button>
+            <!-- Llista dinàmica de targetes d'horari -->
+            <div class="schedules-list" id="schedules-list">
+              <!-- Renderitzat dinàmicament per JavaScript -->
             </div>
 
-            <!-- Hores fixes -->
-            <div id="pref-schedule-times-panel" class="pref-subpanel">
-              <div class="time-chips-container" id="time-chips-container">
-                <!-- Chips like 08:00, 14:00, 19:00 -->
-              </div>
-              <div class="add-time-row">
-                <input type="time" id="new-time-input" value="08:00" class="time-picker-input">
-                <button type="button" class="btn-add-time" id="btn-add-time">
-                  <i class="fa-solid fa-plus"></i> Afegir hora
+            <!-- Botó per afegir nou horari -->
+            <div class="add-schedule-bar">
+              <div class="add-schedule-fields">
+                <input type="time" id="new-schedule-time" value="08:00" class="time-picker-input">
+                <button type="button" class="btn-add-schedule" id="btn-add-schedule">
+                  <i class="fa-solid fa-plus"></i> Afegir nou horari
                 </button>
               </div>
             </div>
-
-            <!-- Interval periòdic -->
-            <div id="pref-schedule-interval-panel" class="pref-subpanel" style="display:none;">
-              <div class="interval-options">
-                <label class="interval-pill">
-                  <input type="radio" name="interval-option" value="15">
-                  <span>Cada 15 min</span>
-                </label>
-                <label class="interval-pill">
-                  <input type="radio" name="interval-option" value="30" checked>
-                  <span>Cada 30 min</span>
-                </label>
-                <label class="interval-pill">
-                  <input type="radio" name="interval-option" value="60">
-                  <span>Cada hora</span>
-                </label>
-              </div>
-              <div class="interval-range-row">
-                <label class="range-label">Franja activa del dia:</label>
-                <div class="range-inputs">
-                  <span>De</span>
-                  <input type="time" id="interval-start" value="07:30" class="time-picker-input">
-                  <span>a</span>
-                  <input type="time" id="interval-end" value="21:30" class="time-picker-input">
-                </div>
-              </div>
-            </div>
           </div>
 
-          <!-- Secció 3: Amb quina repetició de dies? -->
+          <!-- Secció: Repetició de dies -->
           <div class="pref-section">
             <div class="pref-section-title">
-              <i class="fa-solid fa-calendar-days"></i> 3. Repetició de dies
+              <i class="fa-solid fa-calendar-days"></i> Repetició de dies
             </div>
             <div class="segmented-control" id="seg-days-mode">
               <button type="button" class="seg-btn active" data-days="weekdays" id="seg-btn-weekdays">
@@ -313,10 +227,10 @@
             </div>
           </div>
 
-          <!-- Secció 4: Filtres opcionals -->
+          <!-- Secció: Filtres opcionals -->
           <div class="pref-section">
             <div class="pref-section-title">
-              <i class="fa-solid fa-filter"></i> 4. Condicions d'alerta (Opcional)
+              <i class="fa-solid fa-filter"></i> Condicions d'alerta (Opcional)
             </div>
             <div class="filter-condition-row">
               <label class="checkbox-label">
@@ -374,13 +288,13 @@
     </div>
   </div>
 
-  <!-- Modal Selector Visual de Capes de Mapa -->
+  <!-- Modal Selector Visual d'Estil de Mapa -->
   <div class="modal-overlay" id="modal-layers-overlay" aria-hidden="true">
     <div class="modal-card modal-card-layers" id="modal-layers-card" role="dialog" aria-labelledby="modal-layers-title">
       <div class="modal-header">
         <div class="modal-title-group">
-          <h2 id="modal-layers-title"><i class="fa-solid fa-layer-group" style="color:var(--primary-green);"></i> Estils de Mapa</h2>
-          <span class="modal-subtitle">Tria el mapa que t'agradi més visualment (es desa al navegador)</span>
+          <h2 id="modal-layers-title"><i class="fa-solid fa-palette" style="color:var(--primary-green);"></i> Estil del Mapa</h2>
+          <span class="modal-subtitle">Tria l'estil visual que prefereixis per al mapa de Girona</span>
         </div>
         <button class="btn-close-modal" id="btn-close-layers" aria-label="Tancar">
           <i class="fa-solid fa-xmark"></i>
@@ -457,10 +371,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <!-- Leaflet Rotate Plugin (Suport rotació lliure del mapa) -->
   <script src="leaflet-rotate.js"></script>
-  <!-- MapLibre GL JS & Leaflet Plugin for Vector Positron GL Style -->
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
   <!-- Application JS -->
-  <script src="app.js"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

@@ -15,15 +15,19 @@ const CONFIG = {
   mapLayerStorageKey: 'girocleta_map_layer'
 };
 
-// Available Base Map Layers: 100% free, high reliability, zero API key required
+// Available Base Map Layers: 100% free, high reliability, zero API key required, pure native Leaflet
 const MAP_LAYERS = {
   positron: {
     id: 'positron',
-    type: 'maplibre',
-    name: 'Positron GL (OpenMapTiles)',
-    desc: 'L\'estil vectorial Positron GL: disseny nítid, clar i minimalista. Ressalta al màxim les estacions de Girocleta.',
+    name: 'Positron (Minimalista)',
+    desc: 'L\'estil Positron net, clar i minimalista. Ressalta al màxim els marcadors de la Girocleta amb màxima fluïdesa i estabilitat.',
     badge: 'Per Defecte',
-    styleUrl: 'https://tiles.openfreemap.org/styles/positron',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    },
+    tileClass: 'filter-positron',
     previewClass: 'preview-positron'
   },
   cyclosm: {
@@ -117,9 +121,9 @@ const MAP_LAYERS = {
 // Automatic migration & default to Positron GL style
 function getInitialMapLayerKey() {
   const saved = localStorage.getItem(CONFIG.mapLayerStorageKey);
-  const hasMigrated = localStorage.getItem('girocleta_positron_migrated_v1');
+  const hasMigrated = localStorage.getItem('girocleta_positron_clean_v2');
   if (!hasMigrated) {
-    localStorage.setItem('girocleta_positron_migrated_v1', 'true');
+    localStorage.setItem('girocleta_positron_clean_v2', 'true');
     localStorage.setItem(CONFIG.mapLayerStorageKey, 'positron');
     return 'positron';
   }
@@ -262,8 +266,7 @@ async function fetchLiveCityBikData() {
       renderStationsList();
       updateNotificationPreview();
 
-      const timeStr = new Date().toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
-      updateStatus(`En directe (${timeStr})`, true);
+      updateStatus('En directe', true);
     }
   } catch (err) {
     console.warn('Could not fetch CityBik live data:', err);
@@ -474,8 +477,56 @@ function updateFavoritesBadge() {
 }
 
 // ==========================================================================
-// User Geolocation & Nearby Stations
+// User Geolocation & Center Map Controls
 // ==========================================================================
+function centerOnUserLocation() {
+  const btn = document.getElementById('btn-map-locate');
+  if (btn) btn.classList.add('locating');
+
+  if (!navigator.geolocation) {
+    showToast('El teu navegador no suporta la geolocalització');
+    if (btn) btn.classList.remove('locating');
+    return;
+  }
+
+  showToast('Obtenint la teva ubicació...');
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (btn) btn.classList.remove('locating');
+      const { latitude, longitude } = pos.coords;
+      state.userLocation = { lat: latitude, lon: longitude };
+
+      if (!state.userMarker) {
+        const userIcon = L.divIcon({
+          className: 'custom-user-marker',
+          html: `
+            <div class="user-radar-marker">
+              <div class="user-radar-pulse"></div>
+            </div>
+          `,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        });
+
+        state.userMarker = L.marker([latitude, longitude], { icon: userIcon, zIndexOffset: 1000 }).addTo(state.map);
+        state.userMarker.bindPopup('<b>La teva ubicació</b>');
+      } else {
+        state.userMarker.setLatLng([latitude, longitude]);
+      }
+
+      state.map.flyTo([latitude, longitude], 17, { duration: 1.2 });
+      showToast('Centrat a la teva ubicació actual');
+    },
+    (err) => {
+      if (btn) btn.classList.remove('locating');
+      console.warn('Geolocation error:', err);
+      showToast('No s\'ha pogut accedir a la teva ubicació');
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
 function findNearbyStations() {
   if (!navigator.geolocation) {
     showToast('El teu navegador no suporta la geolocalització');
@@ -771,7 +822,8 @@ function bindUIEvents() {
     openLayersModal();
   });
 
-  // Map Compass Needle (Click to return to North)
+  // Floating Map Controls (GPS Location & Rotation)
+  document.getElementById('btn-map-locate')?.addEventListener('click', centerOnUserLocation);
   document.getElementById('btn-map-compass')?.addEventListener('click', resetMapOrientation);
 
   // Layers Modal Close Buttons
@@ -858,10 +910,7 @@ function showToast(msg) {
 function applyTileLayer(layerKey, notify = true) {
   let actualKey = layerKey;
   if (!MAP_LAYERS[actualKey]) {
-    if (actualKey === 'voyager') actualKey = 'positron';
-    else if (actualKey === 'dark') actualKey = 'esri_dark';
-    else if (actualKey === 'esri') actualKey = 'esri_satellite';
-    else actualKey = 'positron';
+    actualKey = 'positron';
   }
   const layerCfg = MAP_LAYERS[actualKey];
 
@@ -869,13 +918,14 @@ function applyTileLayer(layerKey, notify = true) {
     state.map.removeLayer(state.currentTileLayer);
   }
 
-  if (layerCfg.type === 'maplibre' && typeof L.maplibreGL === 'function') {
-    state.currentTileLayer = L.maplibreGL({
-      style: layerCfg.styleUrl
-    }).addTo(state.map);
-  } else {
-    state.currentTileLayer = L.tileLayer(layerCfg.url, layerCfg.options).addTo(state.map);
+  // Handle CSS filter classes for Positron and Dark styles
+  const tilePane = state.map.getPane('tilePane');
+  if (tilePane) {
+    tilePane.classList.toggle('filter-positron', layerCfg.tileClass === 'filter-positron');
+    tilePane.classList.toggle('filter-dark', layerCfg.tileClass === 'filter-dark');
   }
+
+  state.currentTileLayer = L.tileLayer(layerCfg.url, layerCfg.options).addTo(state.map);
 
   if (state.currentTileLayer && state.currentTileLayer.bringToBack) {
     state.currentTileLayer.bringToBack();
@@ -887,7 +937,7 @@ function applyTileLayer(layerKey, notify = true) {
   renderLayersGrid();
 
   if (notify) {
-    showToast(`Mapa canviat a: ${layerCfg.name}`);
+    showToast(`Estil de mapa: ${layerCfg.name}`);
   }
 }
 
@@ -921,7 +971,7 @@ function renderLayersGrid() {
       <div class="layer-card ${isActive ? 'active' : ''}" data-layer="${l.id}" onclick="selectMapLayer('${l.id}')">
         <div class="layer-preview-thumbnail ${l.previewClass}">
           <div class="layer-preview-badge">${l.badge}</div>
-          <div class="layer-active-indicator"><i class="fa-solid fa-circle-check"></i> Actiu</div>
+          ${isActive ? '<div class="layer-active-indicator"><i class="fa-solid fa-circle-check"></i> Actiu</div>' : ''}
         </div>
         <div class="layer-card-body">
           <div class="layer-card-title">${l.name}</div>
@@ -962,7 +1012,7 @@ function resetMapOrientation() {
 // iOS Safari Web Push Support & Guide Modal
 // ==========================================================================
 function isIOSDevice() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
 }
 
 function isStandalonePWA() {
@@ -990,14 +1040,12 @@ function closeIOSGuideModal() {
 // ==========================================================================
 const DEFAULT_PREFERENCES = {
   notificationsEnabled: false,
-  targetMode: 'favorites', // 'favorites' | 'custom'
-  customStationIds: [],
   daysMode: 'weekdays', // 'all' | 'weekdays' | 'weekends'
-  scheduleMode: 'times', // 'times' | 'interval'
-  scheduleTimes: ['08:00', '14:00', '19:00'],
-  intervalOption: '30', // '15', '30', '60'
-  intervalStart: '07:30',
-  intervalEnd: '21:30',
+  schedules: [
+    { id: 'sched-1', time: '08:00', enabled: true, stationIds: [] },
+    { id: 'sched-2', time: '14:00', enabled: true, stationIds: [] },
+    { id: 'sched-3', time: '19:00', enabled: true, stationIds: [] }
+  ],
   alertOnlyIfLowBikes: false,
   minBikesThreshold: 3,
   alertOnlyIfLowSlots: false,
@@ -1009,12 +1057,26 @@ function loadPreferences() {
   try {
     const raw = localStorage.getItem(CONFIG.prefsStorageKey);
     if (raw) {
-      state.preferences = Object.assign({}, DEFAULT_PREFERENCES, JSON.parse(raw));
+      const parsed = JSON.parse(raw);
+      state.preferences = Object.assign({}, DEFAULT_PREFERENCES, parsed);
+      // Migration: convert old scheduleTimes to new schedules array
+      if (!Array.isArray(state.preferences.schedules) || state.preferences.schedules.length === 0) {
+        const oldTimes = state.preferences.scheduleTimes || ['08:00', '14:00', '19:00'];
+        const oldStationIds = (state.preferences.targetMode === 'custom' && Array.isArray(state.preferences.customStationIds))
+          ? state.preferences.customStationIds
+          : Array.from(state.favorites);
+        state.preferences.schedules = oldTimes.map((t, idx) => ({
+          id: `sched-${Date.now()}-${idx}`,
+          time: t,
+          enabled: true,
+          stationIds: [...oldStationIds]
+        }));
+      }
     } else {
-      state.preferences = Object.assign({}, DEFAULT_PREFERENCES);
+      state.preferences = JSON.parse(JSON.stringify(DEFAULT_PREFERENCES));
     }
   } catch (e) {
-    state.preferences = Object.assign({}, DEFAULT_PREFERENCES);
+    state.preferences = JSON.parse(JSON.stringify(DEFAULT_PREFERENCES));
   }
   updateAlertBadge();
 }
@@ -1043,6 +1105,7 @@ function initServiceWorker() {
     navigator.serviceWorker.register('./sw.js').then((reg) => {
       state.swRegistration = reg;
       console.log('Girocleta Service Worker actiu');
+      if (reg.update) reg.update();
     }).catch((err) => {
       console.warn('Girocleta SW warning:', err);
     });
@@ -1073,13 +1136,10 @@ function openPreferencesModal() {
   const overlay = document.getElementById('modal-prefs-overlay');
   if (!overlay) return;
 
-  // Sync Form with State
   const prefs = state.preferences || DEFAULT_PREFERENCES;
 
-  // Permission Banner
   updatePermissionBanner();
 
-  // Master Toggle
   const toggleNotifs = document.getElementById('toggle-notifs-active');
   const configContainer = document.getElementById('pref-config-container');
   if (toggleNotifs) {
@@ -1089,42 +1149,10 @@ function openPreferencesModal() {
     configContainer.classList.toggle('disabled', !prefs.notificationsEnabled);
   }
 
-  // Counts
-  const favCountEl = document.getElementById('pref-fav-count');
-  if (favCountEl) favCountEl.textContent = state.favorites.size;
-  const customCountEl = document.getElementById('pref-custom-count');
-  if (customCountEl) customCountEl.textContent = prefs.customStationIds.length;
-
-  // Target Mode Segmented
-  document.querySelectorAll('#seg-target-mode .seg-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-target') === prefs.targetMode);
-  });
-  const customStationsDiv = document.getElementById('pref-custom-stations');
-  if (customStationsDiv) {
-    customStationsDiv.style.display = (prefs.targetMode === 'custom') ? 'flex' : 'none';
-  }
-
-  // Schedule Mode Segmented
-  document.querySelectorAll('#seg-schedule-mode .seg-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-schedule') === prefs.scheduleMode);
-  });
-  const timesPanel = document.getElementById('pref-schedule-times-panel');
-  const intervalPanel = document.getElementById('pref-schedule-interval-panel');
-  if (timesPanel) timesPanel.style.display = (prefs.scheduleMode === 'times') ? 'block' : 'none';
-  if (intervalPanel) intervalPanel.style.display = (prefs.scheduleMode === 'interval') ? 'block' : 'none';
-
   // Days Mode Segmented
   document.querySelectorAll('#seg-days-mode .seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-days') === prefs.daysMode);
   });
-
-  // Interval inputs
-  const intRadio = document.querySelector(`input[name="interval-option"][value="${prefs.intervalOption}"]`);
-  if (intRadio) intRadio.checked = true;
-  const intStart = document.getElementById('interval-start');
-  if (intStart) intStart.value = prefs.intervalStart || '07:30';
-  const intEnd = document.getElementById('interval-end');
-  if (intEnd) intEnd.value = prefs.intervalEnd || '21:30';
 
   // Optional conditions
   const chkBikes = document.getElementById('check-low-bikes');
@@ -1137,8 +1165,7 @@ function openPreferencesModal() {
   const numSlots = document.getElementById('num-min-slots');
   if (numSlots) numSlots.value = prefs.minSlotsThreshold || 3;
 
-  renderTimeChips();
-  renderPrefStationsGrid();
+  renderSchedulesList();
   updateNotificationPreview();
 
   overlay.classList.add('open');
@@ -1150,7 +1177,6 @@ function closePreferencesModal() {
   if (!overlay) return;
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
-  // De-activate alerts nav button if active
   if (document.getElementById('btn-nav-alerts')?.classList.contains('active')) {
     setActiveNavBtn('btn-nav-home');
   }
@@ -1164,6 +1190,17 @@ function updatePermissionBanner() {
   if (!banner || !btn) return;
 
   const hasNotif = ('Notification' in window);
+
+  // Special clear instruction for iOS Safari users
+  if (isIOSDevice() && !isStandalonePWA()) {
+    banner.className = 'pref-permission-banner default';
+    title.innerHTML = '<i class="fa-brands fa-apple" style="color:#1e293b;"></i> Requeriment a l\'iPhone / iPad';
+    desc.textContent = 'A Safari cal afegir la Girocleta a la pantalla d\'inici per activar notificacions push.';
+    btn.style.display = 'inline-flex';
+    btn.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> Com activar a l\'iPhone';
+    return;
+  }
+
   const perm = hasNotif ? Notification.permission : 'unsupported';
   banner.className = 'pref-permission-banner ' + perm;
 
@@ -1176,16 +1213,9 @@ function updatePermissionBanner() {
     desc.textContent = 'Has denegat les notificacions. Activa-les als paràmetres del navegador si vols avisos.';
     btn.style.display = 'none';
   } else if (perm === 'unsupported') {
-    if (isIOSDevice() && !isStandalonePWA()) {
-      title.innerHTML = '<i class="fa-brands fa-apple" style="color:#1e293b;"></i> Requeriment a l\'iPhone / iPad';
-      desc.textContent = 'A Safari cal afegir la Girocleta a la pantalla d\'inici per activar notificacions push.';
-      btn.style.display = 'inline-flex';
-      btn.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> Com activar a l\'iPhone';
-    } else {
-      title.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Sense suport de notificacions';
-      desc.textContent = 'Aquest navegador no admet notificacions push web.';
-      btn.style.display = 'none';
-    }
+    title.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Sense suport de notificacions';
+    desc.textContent = 'Aquest navegador no admet notificacions push web.';
+    btn.style.display = 'none';
   } else {
     title.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Permís del navegador';
     desc.textContent = 'Cal concedir permís per rebre notificacions push al teu dispositiu.';
@@ -1195,11 +1225,11 @@ function updatePermissionBanner() {
 }
 
 function requestNotificationPermission() {
+  if (isIOSDevice() && !isStandalonePWA()) {
+    openIOSGuideModal();
+    return;
+  }
   if (!('Notification' in window)) {
-    if (isIOSDevice() && !isStandalonePWA()) {
-      openIOSGuideModal();
-      return;
-    }
     showToast('Aquest navegador no admet la Notification API.');
     return;
   }
@@ -1218,67 +1248,189 @@ function requestNotificationPermission() {
   });
 }
 
-// Render Time Chips (e.g. 08:00, 14:00)
-function renderTimeChips() {
-  const container = document.getElementById('time-chips-container');
+// Render dynamic schedules and stations list
+function renderSchedulesList() {
+  const container = document.getElementById('schedules-list');
   if (!container) return;
   container.innerHTML = '';
 
-  const times = (state.preferences && state.preferences.scheduleTimes) ? state.preferences.scheduleTimes : ['08:00', '14:00', '19:00'];
-  times.sort().forEach(t => {
-    const chip = document.createElement('div');
-    chip.className = 'time-chip';
-    chip.innerHTML = `<span>${t}</span><i class="fa-solid fa-circle-xmark time-chip-del" title="Eliminar ${t}"></i>`;
-    chip.querySelector('.time-chip-del').addEventListener('click', () => {
-      state.preferences.scheduleTimes = state.preferences.scheduleTimes.filter(item => item !== t);
-      renderTimeChips();
-    });
-    container.appendChild(chip);
-  });
-}
+  const schedules = (state.preferences && Array.isArray(state.preferences.schedules)) 
+    ? state.preferences.schedules 
+    : [];
 
-// Render Checkbox Grid for Custom Stations
-function renderPrefStationsGrid(filter = '') {
-  const container = document.getElementById('pref-stations-grid');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const customIds = new Set(state.preferences.customStationIds || []);
-  let stations = state.stations;
-  if (filter.trim()) {
-    const q = filter.trim().toLowerCase();
-    stations = stations.filter(s => s.name.toLowerCase().includes(q) || (s.code && s.code.includes(q)));
+  if (schedules.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:16px; color:#94a3b8; font-size:13px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+        No tens cap horari configurat. Afegeix-ne un amb el botó d'aquí sota.
+      </div>
+    `;
+    return;
   }
 
-  stations.forEach(station => {
-    const item = document.createElement('label');
-    item.className = 'station-check-item';
-    const isChecked = customIds.has(station.id);
-    item.innerHTML = `
-      <div class="station-check-left">
-        <input type="checkbox" value="${station.id}" ${isChecked ? 'checked' : ''} class="custom-station-chk">
-        <span><strong>${station.code || station.id}</strong> - ${station.name}</span>
+  // Sort schedules by time
+  const sorted = [...schedules].sort((a, b) => a.time.localeCompare(b.time));
+
+  sorted.forEach(sched => {
+    const card = document.createElement('div');
+    card.className = `schedule-card ${sched.enabled ? '' : 'disabled'}`;
+    card.setAttribute('data-sched-id', sched.id);
+
+    // Selected station chips
+    const stationIds = Array.isArray(sched.stationIds) ? sched.stationIds : [];
+    let chipsHtml = '';
+    if (stationIds.length === 0) {
+      chipsHtml = `<span style="font-size:12px; color:#94a3b8; font-style:italic;">Cap estació seleccionada (s'enviaran les preferides ⭐)</span>`;
+    } else {
+      chipsHtml = stationIds.map(stId => {
+        const station = state.stations.find(s => Number(s.id) === Number(stId));
+        const name = station ? station.name : `Estació #${stId}`;
+        const code = station ? (station.code || station.id) : stId;
+        return `
+          <div class="sched-chip" data-station-id="${stId}">
+            <span class="sched-chip-code">${code}</span>
+            <span>${name}</span>
+            <i class="fa-solid fa-circle-xmark sched-chip-del" title="Treure estació"></i>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Available stations dropdown options (sorted by code/id)
+    const availableStations = [...state.stations].sort((a, b) => {
+      const ca = parseInt(a.code || a.id, 10) || 0;
+      const cb = parseInt(b.code || b.id, 10) || 0;
+      return ca - cb;
+    });
+
+    const optionsHtml = availableStations
+      .filter(s => !stationIds.includes(Number(s.id)))
+      .map(s => `<option value="${s.id}">#${s.code || s.id} - ${s.name} (${s.bikes} bicis, ${s.slots} llocs)</option>`)
+      .join('');
+
+    card.innerHTML = `
+      <div class="schedule-card-header">
+        <div class="schedule-time-badge">
+          <i class="fa-solid fa-clock"></i>
+          <input type="time" class="sched-time-input" value="${sched.time}" aria-label="Hora de la notificació">
+        </div>
+        <div class="schedule-card-actions">
+          <label class="switch switch-sm" title="Activar/desactivar aquest horari">
+            <input type="checkbox" class="sched-enable-toggle" ${sched.enabled ? 'checked' : ''}>
+            <span class="slider round"></span>
+          </label>
+          <button type="button" class="btn-del-schedule" title="Eliminar aquest horari" aria-label="Eliminar horari">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
       </div>
-      <div class="station-check-badges">
-        <span class="badge-mini-bikes">🚲 ${station.bikes}</span>
-        <span class="badge-mini-slots">🅿️ ${station.slots}</span>
+
+      <div class="sched-stations-label">
+        <span>Estacions monitoritzades (<span class="sched-station-count">${stationIds.length}</span>)</span>
+        <button type="button" class="btn-sched-favs-quick" title="Carregar totes les teves estacions preferides en aquest horari">
+          <i class="fa-solid fa-star"></i> Carregar preferides
+        </button>
+      </div>
+
+      <div class="sched-station-chips">
+        ${chipsHtml}
+      </div>
+
+      <div class="sched-add-station-dropdown-wrap">
+        <select class="sched-select-station">
+          <option value="">+ Afegir una estació a les ${sched.time}...</option>
+          ${optionsHtml}
+        </select>
       </div>
     `;
 
-    item.querySelector('.custom-station-chk').addEventListener('change', (e) => {
-      if (e.target.checked) {
-        customIds.add(station.id);
-      } else {
-        customIds.delete(station.id);
-      }
-      state.preferences.customStationIds = Array.from(customIds);
-      const customCountEl = document.getElementById('pref-custom-count');
-      if (customCountEl) customCountEl.textContent = state.preferences.customStationIds.length;
+    // Events for this schedule card
+    // 1. Time change
+    const timeInput = card.querySelector('.sched-time-input');
+    timeInput.addEventListener('change', (e) => {
+      sched.time = e.target.value;
+      renderSchedulesList();
       updateNotificationPreview();
     });
 
-    container.appendChild(item);
+    // 2. Enable toggle
+    const toggle = card.querySelector('.sched-enable-toggle');
+    toggle.addEventListener('change', (e) => {
+      sched.enabled = e.target.checked;
+      card.classList.toggle('disabled', !sched.enabled);
+      updateNotificationPreview();
+    });
+
+    // 3. Delete schedule
+    const delBtn = card.querySelector('.btn-del-schedule');
+    delBtn.addEventListener('click', () => {
+      state.preferences.schedules = state.preferences.schedules.filter(s => s.id !== sched.id);
+      renderSchedulesList();
+      updateNotificationPreview();
+    });
+
+    // 4. Quick add favorites
+    const favsBtn = card.querySelector('.btn-sched-favs-quick');
+    favsBtn.addEventListener('click', () => {
+      if (state.favorites.size === 0) {
+        showToast('Encara no has marcat cap estació com a preferida ⭐');
+        return;
+      }
+      const existing = new Set((sched.stationIds || []).map(Number));
+      state.favorites.forEach(id => existing.add(Number(id)));
+      sched.stationIds = Array.from(existing);
+      renderSchedulesList();
+      updateNotificationPreview();
+      showToast('Estacions preferides afegides a aquest horari');
+    });
+
+    // 5. Remove station chip
+    card.querySelectorAll('.sched-chip').forEach(chip => {
+      const chipDel = chip.querySelector('.sched-chip-del');
+      const stationId = Number(chip.getAttribute('data-station-id'));
+      chipDel.addEventListener('click', () => {
+        sched.stationIds = sched.stationIds.filter(id => Number(id) !== stationId);
+        renderSchedulesList();
+        updateNotificationPreview();
+      });
+    });
+
+    // 6. Select station from dropdown
+    const select = card.querySelector('.sched-select-station');
+    select.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (!val) return;
+      const stId = Number(val);
+      if (!Array.isArray(sched.stationIds)) sched.stationIds = [];
+      if (!sched.stationIds.includes(stId)) {
+        sched.stationIds.push(stId);
+        renderSchedulesList();
+        updateNotificationPreview();
+      }
+    });
+
+    container.appendChild(card);
   });
+}
+
+function addNewSchedule() {
+  const timeInput = document.getElementById('new-schedule-time');
+  const timeVal = (timeInput && timeInput.value) ? timeInput.value : '08:00';
+
+  if (!Array.isArray(state.preferences.schedules)) {
+    state.preferences.schedules = [];
+  }
+
+  const newSched = {
+    id: `sched-${Date.now()}`,
+    time: timeVal,
+    enabled: true,
+    stationIds: (state.favorites.size > 0) ? Array.from(state.favorites).map(Number) : []
+  };
+
+  state.preferences.schedules.push(newSched);
+  renderSchedulesList();
+  updateNotificationPreview();
+  showToast(`Nou horari afegit (${timeVal})`);
 }
 
 // Live Notification Preview Card
@@ -1287,20 +1439,28 @@ function updateNotificationPreview() {
   const bodyEl = document.getElementById('notif-prev-body');
   if (!titleEl || !bodyEl) return;
 
+  const prefs = state.preferences;
   let targetStation = null;
-  if (state.preferences.targetMode === 'favorites' && state.favorites.size > 0) {
+
+  if (prefs && Array.isArray(prefs.schedules)) {
+    for (const sched of prefs.schedules) {
+      if (sched.enabled && sched.stationIds && sched.stationIds.length > 0) {
+        targetStation = state.stations.find(s => Number(s.id) === Number(sched.stationIds[0]));
+        if (targetStation) break;
+      }
+    }
+  }
+
+  if (!targetStation && state.favorites.size > 0) {
     const firstFavId = Array.from(state.favorites)[0];
-    targetStation = state.stations.find(s => s.id === firstFavId);
-  } else if (state.preferences.targetMode === 'custom' && state.preferences.customStationIds.length > 0) {
-    const firstCustomId = state.preferences.customStationIds[0];
-    targetStation = state.stations.find(s => s.id === firstCustomId);
+    targetStation = state.stations.find(s => Number(s.id) === Number(firstFavId));
   }
 
   if (!targetStation) {
     targetStation = state.stations[0] || { name: 'Plaça de Catalunya', code: '03', bikes: 14, slots: 12 };
   }
 
-  titleEl.textContent = targetStation.name;
+  titleEl.textContent = `Girocleta | ${targetStation.name}`;
   bodyEl.innerHTML = `<div>🚲 <strong>${targetStation.bikes} bicis disponibles</strong></div><div>🅿️ <strong>${targetStation.slots} llocs lliures</strong></div>`;
 }
 
@@ -1326,62 +1486,8 @@ function bindPreferencesEvents() {
     updateAlertBadge();
   });
 
-  // Segmented Target Mode (Favorites vs Custom)
-  document.querySelectorAll('#seg-target-mode .seg-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#seg-target-mode .seg-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const target = btn.getAttribute('data-target');
-      state.preferences.targetMode = target;
-      const customDiv = document.getElementById('pref-custom-stations');
-      if (customDiv) customDiv.style.display = (target === 'custom') ? 'flex' : 'none';
-      updateNotificationPreview();
-    });
-  });
-
-  // Station search in preferences
-  document.getElementById('pref-station-search')?.addEventListener('input', (e) => {
-    renderPrefStationsGrid(e.target.value);
-  });
-
-  // Segmented Schedule Mode (Times vs Interval)
-  document.querySelectorAll('#seg-schedule-mode .seg-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#seg-schedule-mode .seg-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const sched = btn.getAttribute('data-schedule');
-      state.preferences.scheduleMode = sched;
-      document.getElementById('pref-schedule-times-panel').style.display = (sched === 'times') ? 'block' : 'none';
-      document.getElementById('pref-schedule-interval-panel').style.display = (sched === 'interval') ? 'block' : 'none';
-    });
-  });
-
-  // Add Time Button
-  document.getElementById('btn-add-time')?.addEventListener('click', () => {
-    const input = document.getElementById('new-time-input');
-    if (!input || !input.value) return;
-    const timeVal = input.value;
-    if (!state.preferences.scheduleTimes.includes(timeVal)) {
-      state.preferences.scheduleTimes.push(timeVal);
-      renderTimeChips();
-    } else {
-      showToast(`L'hora ${timeVal} ja està afegida`);
-    }
-  });
-
-  // Interval Options
-  document.querySelectorAll('input[name="interval-option"]').forEach(r => {
-    r.addEventListener('change', (e) => {
-      state.preferences.intervalOption = e.target.value;
-    });
-  });
-
-  document.getElementById('interval-start')?.addEventListener('change', (e) => {
-    state.preferences.intervalStart = e.target.value;
-  });
-  document.getElementById('interval-end')?.addEventListener('change', (e) => {
-    state.preferences.intervalEnd = e.target.value;
-  });
+  // Add Schedule Button
+  document.getElementById('btn-add-schedule')?.addEventListener('click', addNewSchedule);
 
   // Segmented Days Mode
   document.querySelectorAll('#seg-days-mode .seg-btn').forEach(btn => {
@@ -1419,11 +1525,12 @@ function bindPreferencesEvents() {
 
 // Send Test Notification Now
 function sendTestNotification() {
+  if (isIOSDevice() && !isStandalonePWA()) {
+    openIOSGuideModal();
+    return;
+  }
+
   if (!('Notification' in window)) {
-    if (isIOSDevice() && !isStandalonePWA()) {
-      openIOSGuideModal();
-      return;
-    }
     showToast('Aquest navegador no admet notificacions push.');
     executeTestNotification(); // Mostra el toast interactiu de prova
     return;
@@ -1445,13 +1552,21 @@ function sendTestNotification() {
 }
 
 function executeTestNotification() {
+  const prefs = state.preferences;
   let targetStation = null;
-  if (state.preferences.targetMode === 'favorites' && state.favorites.size > 0) {
+
+  if (prefs && Array.isArray(prefs.schedules)) {
+    for (const sched of prefs.schedules) {
+      if (sched.enabled && sched.stationIds && sched.stationIds.length > 0) {
+        targetStation = state.stations.find(s => Number(s.id) === Number(sched.stationIds[0]));
+        if (targetStation) break;
+      }
+    }
+  }
+
+  if (!targetStation && state.favorites.size > 0) {
     const firstFavId = Array.from(state.favorites)[0];
-    targetStation = state.stations.find(s => s.id === firstFavId);
-  } else if (state.preferences.targetMode === 'custom' && state.preferences.customStationIds.length > 0) {
-    const firstCustomId = state.preferences.customStationIds[0];
-    targetStation = state.stations.find(s => s.id === firstCustomId);
+    targetStation = state.stations.find(s => Number(s.id) === Number(firstFavId));
   }
 
   if (!targetStation) {
@@ -1463,7 +1578,7 @@ function executeTestNotification() {
 
 // Dispatch Station Notification with live bikes & slots
 function dispatchStationPushNotification(station, isTest = false) {
-  const title = station.name;
+  const title = `Girocleta | ${station.name}`;
   const body = `🚲 ${station.bikes} bicis disponibles\n🅿️ ${station.slots} llocs lliures${isTest ? ' (Prova)' : ''}`;
   const icon = 'girocleta_logo.png';
   const badge = 'girocleta-logo.svg';
@@ -1526,41 +1641,26 @@ function checkScheduledNotifications() {
 
   if (prefs.lastNotifiedKey === notifKey) return;
 
-  let shouldTrigger = false;
-  if (prefs.scheduleMode === 'times') {
-    if (prefs.scheduleTimes && prefs.scheduleTimes.includes(currentTime)) {
-      shouldTrigger = true;
-    }
-  } else if (prefs.scheduleMode === 'interval') {
-    const start = prefs.intervalStart || '07:30';
-    const end = prefs.intervalEnd || '21:30';
-    if (currentTime >= start && currentTime <= end) {
-      const [startH, startM] = start.split(':').map(Number);
-      const totalStartMins = startH * 60 + startM;
-      const totalCurMins = now.getHours() * 60 + now.getMinutes();
-      const diffMins = totalCurMins - totalStartMins;
-      const step = parseInt(prefs.intervalOption, 10) || 30;
-      if (diffMins >= 0 && diffMins % step === 0) {
-        shouldTrigger = true;
-      }
-    }
-  }
-
-  if (!shouldTrigger) return;
+  // Find all active schedules configured for this minute
+  const activeSchedules = (prefs.schedules || []).filter(s => s.enabled && s.time === currentTime);
+  if (activeSchedules.length === 0) return;
 
   // Mark as triggered for this minute
   prefs.lastNotifiedKey = notifKey;
   savePreferences(false);
 
-  // Identify Target Stations
-  let targetStations = [];
-  if (prefs.targetMode === 'favorites') {
-    targetStations = state.stations.filter(s => state.favorites.has(s.id));
-  } else if (prefs.targetMode === 'custom') {
-    const idSet = new Set(prefs.customStationIds || []);
-    targetStations = state.stations.filter(s => idSet.has(s.id));
-  }
+  // Collect target station IDs from all schedules active at this time
+  const targetStationIdSet = new Set();
+  activeSchedules.forEach(sched => {
+    if (Array.isArray(sched.stationIds) && sched.stationIds.length > 0) {
+      sched.stationIds.forEach(id => targetStationIdSet.add(Number(id)));
+    } else {
+      // If none explicitly selected, fallback to user's favorites
+      state.favorites.forEach(id => targetStationIdSet.add(Number(id)));
+    }
+  });
 
+  let targetStations = state.stations.filter(s => targetStationIdSet.has(Number(s.id)));
   if (targetStations.length === 0) return;
 
   // Optional Filtering conditions
@@ -1573,8 +1673,8 @@ function checkScheduledNotifications() {
     });
   }
 
-  // Dispatch notifications (max 3 at once to prevent spam)
-  targetStations.slice(0, 3).forEach(station => {
+  // Dispatch notifications (max 4 at once to prevent spam)
+  targetStations.slice(0, 4).forEach(station => {
     dispatchStationPushNotification(station, false);
   });
 }

@@ -293,90 +293,14 @@ html, body {
 }
 
 /* ==========================================================================
-   Quick Stats Pill & Legend
+   Leaflet Tile Pane Visual Filters (Positron & Dark)
    ========================================================================== */
-.quick-stats-pill {
-  position: fixed;
-  bottom: 24px;
-  left: 20px;
-  z-index: 999;
-  background: var(--bg-glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  font-weight: 600;
+.leaflet-tile-pane.filter-positron img.leaflet-tile {
+  filter: grayscale(100%) brightness(108%) contrast(90%);
 }
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.leaflet-tile-pane.filter-dark img.leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
-.stat-label {
-  color: var(--text-muted);
-}
-.stat-val {
-  font-weight: 800;
-}
-.stat-val.bikes-color {
-  color: var(--primary-green);
-}
-.stat-val.slots-color {
-  color: var(--accent-blue);
-}
-.stat-divider {
-  width: 1px;
-  height: 14px;
-  background: var(--surface-border);
-}
-
-.map-legend {
-  position: fixed;
-  bottom: 24px;
-  right: 70px;
-  z-index: 999;
-  background: var(--bg-glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: 8px 14px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.legend-header {
-  color: var(--text-muted);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-}
-.legend-items {
-  display: flex;
-  gap: 10px;
-}
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-main);
-}
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-.legend-dot.green { background-color: var(--primary-green); }
-.legend-dot.yellow { background-color: var(--accent-yellow); }
-.legend-dot.red { background-color: var(--accent-red); }
 
 /* ==========================================================================
    Leaflet Custom Dual-Badge Map Marker Pins (Bicis + Parkings)
@@ -1049,7 +973,7 @@ html, body {
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  z-index: 1200;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1709,13 +1633,20 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
-   Floating Compass Button (Map Rotation Reset)
+   Floating Map Controls (GPS Location & Compass Reset)
    ========================================================================== */
-.compass-btn-floating {
+.map-floating-controls {
   position: fixed;
   right: 14px;
   bottom: 84px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.map-btn-floating {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -1729,19 +1660,32 @@ input:checked + .slider:before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  transition: transform var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
   padding: 0;
+  color: var(--text-main);
+  font-size: 16px;
+  transition: transform var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
 }
 
-.compass-btn-floating:hover {
+.map-btn-floating:hover {
   background: #ffffff;
   transform: scale(1.06);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  color: var(--primary-green);
 }
 
-.compass-btn-floating:active {
+.map-btn-floating:active {
   transform: scale(0.96);
+}
+
+.map-btn-floating.locating {
+  color: var(--primary-green);
+  animation: pulse-locate 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse-locate {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 104, 55, 0.4); }
+  50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(0, 104, 55, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 104, 55, 0); }
 }
 
 .compass-dial {
@@ -1774,6 +1718,227 @@ input:checked + .slider:before {
   color: var(--text-main);
   line-height: 1;
   letter-spacing: -0.5px;
+}
+
+/* ==========================================================================
+   Custom Schedules List & Per-Schedule Station Selector
+   ========================================================================== */
+.pref-section-title-wrap {
+  margin-bottom: 12px;
+}
+.pref-section-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.schedule-card {
+  background: #f8fafc;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  transition: all var(--transition-fast);
+}
+.schedule-card:hover {
+  border-color: rgba(0, 104, 55, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.schedule-card.disabled {
+  opacity: 0.55;
+  background: #f1f5f9;
+}
+
+.schedule-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.schedule-time-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+}
+.schedule-time-badge i {
+  color: var(--primary-green);
+  font-size: 14px;
+}
+.sched-time-input {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+}
+
+.schedule-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch-sm {
+  width: 36px;
+  height: 20px;
+}
+.switch-sm .slider:before {
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+}
+.switch-sm input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+.btn-del-schedule {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color var(--transition-fast);
+}
+.btn-del-schedule:hover {
+  color: #ef4444;
+}
+
+.sched-stations-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #64748b;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.sched-station-count {
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+.sched-station-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  min-height: 26px;
+}
+
+.sched-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: var(--text-main);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.sched-chip-code {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--primary-green);
+  background: #eaf5ee;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.sched-chip-del {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 12px;
+  transition: color var(--transition-fast);
+}
+.sched-chip-del:hover {
+  color: #ef4444;
+}
+
+.sched-add-station-dropdown-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.sched-select-station {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  background: white;
+  border: 1px dashed #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+}
+.sched-select-station:hover {
+  border-color: var(--primary-green);
+}
+.btn-sched-favs-quick {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-sched-favs-quick:hover {
+  background: #fde68a;
+}
+
+.add-schedule-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+.add-schedule-fields {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-add-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #006837;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.btn-add-schedule:hover {
+  background: #004d28;
 }
 
 /* ==========================================================================
@@ -1813,6 +1978,22 @@ input:checked + .slider:before {
   border-color: var(--primary-green);
   background: #f0fdf4;
   box-shadow: 0 4px 14px rgba(0, 104, 55, 0.16);
+}
+
+.layer-active-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--primary-green);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .layer-card-preview {
