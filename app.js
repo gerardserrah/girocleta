@@ -15,51 +15,25 @@ const CONFIG = {
   mapLayerStorageKey: 'girocleta_map_layer'
 };
 
-// Available Base Map Layers with high visual quality and 100% free access
+// Available Base Map Layers: 100% free, high reliability, zero API key required
 const MAP_LAYERS = {
-  voyager: {
-    id: 'voyager',
-    name: 'CartoDB Voyager',
-    desc: 'Clar, modern i detallat. Ideal per a navegació urbana amb bici.',
-    badge: 'Recomanat',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  cyclosm: {
+    id: 'cyclosm',
+    name: 'CyclOSM (Bicicletes & Carrils)',
+    desc: 'Creat especialment per a ciclistes: destaca clarament els carrils bici de Girona, vies verdes i carrers 30.',
+    badge: 'Recomanat Girocleta',
+    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
     options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
-      subdomains: 'abcd',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> | <a href="https://www.cyclosm.org" target="_blank" rel="noopener">CyclOSM</a>',
+      subdomains: 'abc',
       maxZoom: 19
     },
-    previewClass: 'preview-voyager'
-  },
-  positron: {
-    id: 'positron',
-    name: 'CartoDB Positron',
-    desc: 'Gris minimalista molt net. Ressalta al màxim els marcadors de la Girocleta.',
-    badge: 'Minimalista',
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 19
-    },
-    previewClass: 'preview-positron'
-  },
-  dark: {
-    id: 'dark',
-    name: 'CartoDB Dark Matter',
-    desc: 'Mode fosc elegant i d\'alt contrast per a la nit.',
-    badge: 'Mode Fosc',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 19
-    },
-    previewClass: 'preview-dark'
+    previewClass: 'preview-cyclosm'
   },
   osm: {
     id: 'osm',
     name: 'OpenStreetMap Clàssic',
-    desc: 'El mapa cartogràfic col·laboratiu amb tot el detall de carrers i noms.',
+    desc: 'El mapa cartogràfic de referència mundial amb tot el detall de carrers, noms i places de Girona.',
     badge: 'Clàssic',
     url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     options: {
@@ -68,22 +42,59 @@ const MAP_LAYERS = {
     },
     previewClass: 'preview-osm'
   },
-  esri: {
-    id: 'esri',
-    name: 'Esri Satèl·lit',
-    desc: 'Ortofoto i imatges aèries reals en alta resolució per veure Girona des de l\'aire.',
+  osm_hot: {
+    id: 'osm_hot',
+    name: 'OSM Suau (Colors Pastel)',
+    desc: 'Estil suau d\'alta llegibilitat que fa que les estacions de la Girocleta contrastin a la perfecció.',
+    badge: 'Clar & Suau',
+    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    options: {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> | Humanitarian OSM',
+      subdomains: 'abc',
+      maxZoom: 19
+    },
+    previewClass: 'preview-osm-hot'
+  },
+  esri_streets: {
+    id: 'esri_streets',
+    name: 'Esri Carrers Urbans',
+    desc: 'Cartografia viària neta i moderna d\'Esri amb edificis i vials d\'alta resolució.',
+    badge: 'Urbà',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    options: {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ',
+      maxZoom: 19
+    },
+    previewClass: 'preview-esri-streets'
+  },
+  esri_dark: {
+    id: 'esri_dark',
+    name: 'Esri Mode Fosc',
+    desc: 'Mode fosc d\'alt contrast per a la nit: les estacions verdes de Girocleta destaquen al màxim.',
+    badge: 'Mode Fosc',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    options: {
+      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+      maxZoom: 16
+    },
+    previewClass: 'preview-esri-dark'
+  },
+  esri_satellite: {
+    id: 'esri_satellite',
+    name: 'Esri Satèl·lit (Fotografia Aèria)',
+    desc: 'Ortofoto real en alta resolució per veure carrers, el riu Onyar i els parcs de Girona des de l\'espai.',
     badge: 'Satèl·lit',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     options: {
       attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
       maxZoom: 19
     },
-    previewClass: 'preview-esri'
+    previewClass: 'preview-esri-satellite'
   },
   opentopo: {
     id: 'opentopo',
-    name: 'OpenTopoMap (Relleu)',
-    desc: 'Mapa topogràfic amb corbes de nivell i relleu del terreny de Girona.',
+    name: 'OpenTopoMap (Relleu & Desnivells)',
+    desc: 'Mapa amb corbes de nivell topogràfiques per mesurar els pendents i desnivells de Girona.',
     badge: 'Topogràfic',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     options: {
@@ -94,11 +105,33 @@ const MAP_LAYERS = {
   }
 };
 
+// Automatic migration for old CartoDB layer keys that require API keys
+function getInitialMapLayerKey() {
+  const saved = localStorage.getItem(CONFIG.mapLayerStorageKey);
+  if (!saved || saved === 'voyager' || !MAP_LAYERS[saved]) {
+    localStorage.setItem(CONFIG.mapLayerStorageKey, 'cyclosm');
+    return 'cyclosm';
+  }
+  if (saved === 'positron') {
+    localStorage.setItem(CONFIG.mapLayerStorageKey, 'osm_hot');
+    return 'osm_hot';
+  }
+  if (saved === 'dark') {
+    localStorage.setItem(CONFIG.mapLayerStorageKey, 'esri_dark');
+    return 'esri_dark';
+  }
+  if (saved === 'esri') {
+    localStorage.setItem(CONFIG.mapLayerStorageKey, 'esri_satellite');
+    return 'esri_satellite';
+  }
+  return saved;
+}
+
 // Application State
 const state = {
   map: null,
   currentTileLayer: null,
-  currentLayerKey: localStorage.getItem(CONFIG.mapLayerStorageKey) || 'voyager',
+  currentLayerKey: getInitialMapLayerKey(),
   stations: [],
   stationMarkers: {},
   userMarker: null,
@@ -820,8 +853,15 @@ function showToast(msg) {
 // Base Map Layers Controller & Customization
 // ==========================================================================
 function applyTileLayer(layerKey, notify = true) {
-  const layerCfg = MAP_LAYERS[layerKey] || MAP_LAYERS.voyager;
-  const actualKey = MAP_LAYERS[layerKey] ? layerKey : 'voyager';
+  let actualKey = layerKey;
+  if (!MAP_LAYERS[actualKey]) {
+    if (actualKey === 'voyager') actualKey = 'cyclosm';
+    else if (actualKey === 'positron') actualKey = 'osm_hot';
+    else if (actualKey === 'dark') actualKey = 'esri_dark';
+    else if (actualKey === 'esri') actualKey = 'esri_satellite';
+    else actualKey = 'cyclosm';
+  }
+  const layerCfg = MAP_LAYERS[actualKey];
 
   if (state.currentTileLayer && state.map.hasLayer(state.currentTileLayer)) {
     state.map.removeLayer(state.currentTileLayer);

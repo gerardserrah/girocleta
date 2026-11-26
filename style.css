@@ -1824,19 +1824,24 @@ input:checked + .slider:before {
 }
 
 /* Gradient Preview Fallbacks for Map Thumbnails */
-.preview-voyager {
-  background: linear-gradient(135deg, #eef3f0 0%, #d8ece0 50%, #cadad3 100%);
-  background-image: radial-gradient(#10b981 1px, transparent 1px), linear-gradient(135deg, #f0fdf4 0%, #e2e8f0 100%);
+.preview-cyclosm {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+  background-image: radial-gradient(#16a34a 1.5px, transparent 1.5px), linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   background-size: 12px 12px, 100% 100%;
 }
-.preview-positron {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
-  background-image: radial-gradient(#64748b 1px, transparent 1px), linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+.preview-osm-hot {
+  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 50%, #ffedd5 100%);
+  background-image: radial-gradient(#ea580c 1px, transparent 1px), linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   background-size: 14px 14px, 100% 100%;
 }
-.preview-dark {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #090d16 100%);
-  background-image: radial-gradient(#22c55e 1.5px, transparent 1px), linear-gradient(135deg, #111827 0%, #030712 100%);
+.preview-esri-streets {
+  background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 50%, #94a3b8 100%);
+  background-image: radial-gradient(#2563eb 1px, transparent 1px), linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  background-size: 12px 12px, 100% 100%;
+}
+.preview-esri-dark {
+  background: linear-gradient(135deg, #090d16 0%, #1e293b 50%, #0f172a 100%);
+  background-image: radial-gradient(#22c55e 1.5px, transparent 1.5px), linear-gradient(135deg, #111827 0%, #030712 100%);
   background-size: 14px 14px, 100% 100%;
 }
 .preview-osm {
@@ -1844,7 +1849,7 @@ input:checked + .slider:before {
   background-image: radial-gradient(#f97316 1px, transparent 1px), linear-gradient(135deg, #fef3c7 0%, #e0f2fe 100%);
   background-size: 12px 12px, 100% 100%;
 }
-.preview-esri {
+.preview-esri-satellite {
   background: linear-gradient(135deg, #1e3a29 0%, #294736 40%, #1a2a3a 100%);
   background-image: radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(135deg, #14532d 0%, #0f172a 100%);
   background-size: 8px 8px, 100% 100%;
