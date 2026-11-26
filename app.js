@@ -1300,7 +1300,7 @@ function updateNotificationPreview() {
     targetStation = state.stations[0] || { name: 'Plaça de Catalunya', code: '03', bikes: 14, slots: 12 };
   }
 
-  titleEl.textContent = `Girocleta | ${targetStation.name}`;
+  titleEl.textContent = targetStation.name;
   bodyEl.innerHTML = `<div>🚲 <strong>${targetStation.bikes} bicis disponibles</strong></div><div>🅿️ <strong>${targetStation.slots} llocs lliures</strong></div>`;
 }
 
@@ -1463,7 +1463,7 @@ function executeTestNotification() {
 
 // Dispatch Station Notification with live bikes & slots
 function dispatchStationPushNotification(station, isTest = false) {
-  const title = `Girocleta | ${station.name}`;
+  const title = station.name;
   const body = `🚲 ${station.bikes} bicis disponibles\n🅿️ ${station.slots} llocs lliures${isTest ? ' (Prova)' : ''}`;
   const icon = 'girocleta_logo.png';
   const badge = 'girocleta-logo.svg';
