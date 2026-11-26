@@ -1291,8 +1291,8 @@ function updateNotificationPreview() {
     targetStation = state.stations[0] || { name: 'Plaça de Catalunya', code: '03', bikes: 14, slots: 12 };
   }
 
-  titleEl.innerHTML = `🚲 Girocleta: ${targetStation.code || targetStation.id}- ${targetStation.name}`;
-  bodyEl.innerHTML = `🚲 <strong>${targetStation.bikes} bicis disponibles</strong> &nbsp;|&nbsp; 🅿️ <strong>${targetStation.slots} llocs lliures</strong>`;
+  titleEl.textContent = `Girocleta | ${targetStation.name}`;
+  bodyEl.innerHTML = `<div>🚲 <strong>${targetStation.bikes} bicis disponibles</strong></div><div>🅿️ <strong>${targetStation.slots} llocs lliures</strong></div>`;
 }
 
 // Bind all Modal Interactions
@@ -1454,8 +1454,8 @@ function executeTestNotification() {
 
 // Dispatch Station Notification with live bikes & slots
 function dispatchStationPushNotification(station, isTest = false) {
-  const title = `🚲 Girocleta: ${station.name}`;
-  const body = `🚲 ${station.bikes} bicis disponibles | 🅿️ ${station.slots} llocs lliures${isTest ? ' (Prova)' : ''}`;
+  const title = `Girocleta | ${station.name}`;
+  const body = `🚲 ${station.bikes} bicis disponibles\n🅿️ ${station.slots} llocs lliures${isTest ? ' (Prova)' : ''}`;
   const icon = 'girocleta_logo.png';
   const badge = 'girocleta-logo.svg';
 
@@ -1477,7 +1477,7 @@ function dispatchStationPushNotification(station, isTest = false) {
   }
 
   // 2. Also show in-app toast for visual confirmation
-  showToast(`${title}: ${body}`);
+  showToast(`${title}\n${body}`);
 }
 
 function fallbackNotification(title, body, stationId) {
