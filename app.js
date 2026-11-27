@@ -288,17 +288,18 @@ async function refreshData(isAuto = false) {
   if (state.isUpdating) return;
   state.isUpdating = true;
   
-  const refreshBtn = document.getElementById('btn-refresh');
-  if (refreshBtn) refreshBtn.classList.add('spinning');
+  const headerLogo = document.getElementById('header-brand-logo');
+  if (headerLogo) headerLogo.classList.add('refreshing');
 
   if (!isAuto) showToast('Actualitzant dades de Girocleta...');
 
   await fetchLiveCityBikData();
 
   setTimeout(() => {
-    if (refreshBtn) refreshBtn.classList.remove('spinning');
+    if (headerLogo) headerLogo.classList.remove('refreshing');
     state.isUpdating = false;
-  }, 600);
+    if (!isAuto) showToast('Dades de Girocleta actualitzades');
+  }, 500);
 }
 
 function updateStatus(text, isLive) {
@@ -908,8 +909,11 @@ function updateQuickStats() {
 // UI Event Listeners
 // ==========================================================================
 function bindUIEvents() {
-  // Brand Home Click
-  document.getElementById('btn-brand-home')?.addEventListener('click', goHome);
+  // Brand Header Click -> Refresh live data
+  document.getElementById('btn-brand-home')?.addEventListener('click', () => {
+    if (isDrawerOpen()) closeDrawer();
+    refreshData(false);
+  });
 
   // 1. Home Button
   document.getElementById('btn-nav-home')?.addEventListener('click', () => {

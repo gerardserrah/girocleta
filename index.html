@@ -43,7 +43,7 @@
   <!-- Custom CSS -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#026838">
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
@@ -128,14 +128,8 @@
 
   <!-- Top Header Banner (SMOU style: extends from top edge to past the large centered logo) -->
   <header class="app-top-header" id="app-top-header">
-    <div class="top-header-side left"></div>
-    <div class="brand-container" id="btn-brand-home" title="Girocleta Girona">
-      <img src="girocleta-logo.svg" alt="Girocleta" class="brand-logo" />
-    </div>
-    <div class="top-header-side right">
-      <button id="btn-refresh" class="btn-icon" title="Refrescar dades en temps real" aria-label="Refrescar">
-        <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
-      </button>
+    <div class="brand-container" id="btn-brand-home" title="Girocleta Girona - Clica per actualitzar">
+      <img src="girocleta-logo.svg" alt="Girocleta" class="brand-logo" id="header-brand-logo" />
     </div>
   </header>
 
@@ -438,6 +432,6 @@
   <!-- Leaflet Rotate Plugin (Suport rotació lliure del mapa) -->
   <script src="leaflet-rotate.js"></script>
   <!-- Application JS -->
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>

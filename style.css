@@ -252,71 +252,48 @@ html, body {
   z-index: 1000;
   background: #026838; /* Girocleta Brand Green */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22);
-  padding-top: max(10px, env(safe-area-inset-top, 10px));
-  padding-bottom: 12px;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-bottom-left-radius: 20px;
-  border-bottom-right-radius: 20px;
+  padding-top: max(14px, env(safe-area-inset-top, 14px));
+  padding-bottom: 14px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   box-sizing: border-box;
 }
 
-.app-top-header .top-header-side {
-  width: 44px;
-  display: flex;
-  align-items: center;
-}
-.app-top-header .top-header-side.left {
-  justify-content: flex-start;
-}
-.app-top-header .top-header-side.right {
-  justify-content: flex-end;
-}
-
 .app-top-header .brand-container {
-  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   user-select: none;
+  padding: 4px 12px;
+  border-radius: 14px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-top-header .brand-container:active {
+  transform: scale(0.96);
+  opacity: 0.9;
 }
 .app-top-header .brand-logo {
-  height: 44px;
-  max-height: 48px;
+  height: 52px;
+  max-height: 56px;
   width: auto;
-  max-width: 220px;
+  max-width: 280px;
   object-fit: contain;
   display: block;
+  transition: transform 0.5s ease;
 }
-
-.app-top-header .btn-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.app-top-header .brand-logo.refreshing {
+  animation: logo-bounce-pulse 0.7s infinite alternate ease-in-out;
 }
-.app-top-header .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.28);
-  color: #F9BF3B;
-  transform: rotate(45deg);
-}
-.app-top-header .btn-icon.spinning i {
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin {
-  100% { transform: rotate(360deg); }
+@keyframes logo-bounce-pulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.06); filter: brightness(1.2); }
 }
 
 /* ==========================================================================
@@ -746,6 +723,9 @@ html, body {
   top: 0;
   right: 0;
   bottom: 0;
+  height: 100%;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
   width: min(90vw, 420px);
   background: white;
   z-index: 1100;
@@ -754,17 +734,22 @@ html, body {
   flex-direction: column;
   transform: translateX(100%);
   transition: transform var(--transition-smooth);
+  box-sizing: border-box;
 }
 .side-drawer.open {
   transform: translateX(0);
 }
 
 .drawer-header {
-  padding: 18px 20px 14px;
+  padding-top: max(18px, env(safe-area-inset-top, 18px));
+  padding-bottom: 14px;
+  padding-left: 20px;
+  padding-right: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--surface-border);
+  background: #ffffff;
 }
 .drawer-title-group h2 {
   font-size: 17px;
@@ -876,7 +861,9 @@ html, body {
 .drawer-content {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 12px 16px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
 }
 
 .stations-list {
@@ -1040,12 +1027,13 @@ html, body {
    ========================================================================== */
 @media (max-width: 640px) {
   .app-top-header {
-    padding-top: max(8px, env(safe-area-inset-top, 8px));
-    padding-bottom: 10px;
+    padding-top: max(12px, env(safe-area-inset-top, 12px));
+    padding-bottom: 12px;
   }
   .app-top-header .brand-logo {
-    height: 38px;
-    max-width: 180px;
+    height: 48px;
+    max-height: 52px;
+    max-width: 250px;
   }
   .bottom-nav-bar {
     padding-top: 6px;
@@ -1069,6 +1057,11 @@ html, body {
   }
   .side-drawer {
     width: 100vw;
+    height: 100%;
+    height: 100dvh;
+    min-height: -webkit-fill-available;
+    top: 0;
+    bottom: 0;
   }
 }
 
