@@ -50,15 +50,12 @@ module.exports = async (req, res) => {
         userTimeStr = timeFormatter.format(now);
         const dayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: userTz, weekday: 'short' });
         const dayStr = dayFormatter.format(now);
-        userDay = (dayStr === 'Sun') ? 0 : (dayStr === 'Sat') ? 6 : 1; // 0=Sun, 6=Sat, 1=Weekday
+        const dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+        userDay = dayMap[dayStr] !== undefined ? dayMap[dayStr] : now.getDay();
       } catch (e) {
         userTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         userDay = now.getDay();
       }
-
-      // Check days filter
-      if (preferences.daysMode === 'weekdays' && (userDay === 0 || userDay === 6)) continue;
-      if (preferences.daysMode === 'weekends' && userDay !== 0 && userDay !== 6) continue;
 
       // Check scheduled times:
       // Match if current time is within +/- 5 minutes of a schedule time
@@ -67,6 +64,17 @@ module.exports = async (req, res) => {
 
       const matchingSchedules = (preferences.schedules || []).filter(sched => {
         if (!sched.enabled || !sched.time) return false;
+
+        // Check if today matches the individual schedule days
+        // userDay: 0=Dg, 1=Dll, 2=Dm, 3=Dc, 4=Dj, 5=Dv, 6=Ds
+        if (Array.isArray(sched.days) && sched.days.length > 0) {
+          if (!sched.days.map(Number).includes(userDay)) return false;
+        } else if (preferences.daysMode === 'weekdays') {
+          if (userDay === 0 || userDay === 6) return false;
+        } else if (preferences.daysMode === 'weekends') {
+          if (userDay !== 0 && userDay !== 6) return false;
+        }
+
         const [sH, sM] = sched.time.split(':').map(Number);
         const schedTotalMins = sH * 60 + sM;
         const diff = Math.abs(curTotalMins - schedTotalMins);

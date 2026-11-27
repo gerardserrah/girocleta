@@ -1138,9 +1138,9 @@ const DEFAULT_PREFERENCES = {
   notificationsEnabled: false,
   daysMode: 'weekdays', // 'all' | 'weekdays' | 'weekends'
   schedules: [
-    { id: 'sched-1', time: '08:00', enabled: true, stationIds: [] },
-    { id: 'sched-2', time: '14:00', enabled: true, stationIds: [] },
-    { id: 'sched-3', time: '19:00', enabled: true, stationIds: [] }
+    { id: 'sched-1', time: '08:00', enabled: true, days: [1, 2, 3, 4, 5], stationIds: [] },
+    { id: 'sched-2', time: '14:00', enabled: true, days: [1, 2, 3, 4, 5], stationIds: [] },
+    { id: 'sched-3', time: '19:00', enabled: true, days: [1, 2, 3, 4, 5], stationIds: [] }
   ],
   alertOnlyIfLowBikes: false,
   minBikesThreshold: 3,
@@ -1148,6 +1148,32 @@ const DEFAULT_PREFERENCES = {
   minSlotsThreshold: 3,
   lastNotifiedKey: ''
 };
+
+function getDaysSummaryText(days) {
+  if (!Array.isArray(days) || days.length === 0) return 'Cap dia seleccionat';
+  const sorted = [...days].map(Number);
+  if (sorted.length === 7) return 'Tots els dies';
+  const isWeekdays = sorted.length === 5 && [1, 2, 3, 4, 5].every(d => sorted.includes(d));
+  if (isWeekdays) return 'Laborables (Dll - Dv)';
+  const isWeekends = sorted.length === 2 && [0, 6].every(d => sorted.includes(d));
+  if (isWeekends) return 'Caps de setmana (Ds - Dg)';
+
+  const names = {
+    1: 'Dilluns',
+    2: 'Dimarts',
+    3: 'Dimecres',
+    4: 'Dijous',
+    5: 'Divendres',
+    6: 'Dissabte',
+    0: 'Diumenge'
+  };
+
+  const orderedDays = [1, 2, 3, 4, 5, 6, 0].filter(d => sorted.includes(d));
+  if (orderedDays.length === 1) return `Cada ${names[orderedDays[0]]}`;
+  const last = names[orderedDays[orderedDays.length - 1]];
+  const rest = orderedDays.slice(0, -1).map(d => names[d]).join(', ');
+  return `${rest} i ${last}`;
+}
 
 function loadPreferences() {
   try {
@@ -1485,6 +1511,8 @@ function renderSchedulesList() {
       .map(s => `<option value="${s.id}">#${s.code || s.id} - ${s.name} (${s.bikes} bicis, ${s.slots} llocs)</option>`)
       .join('');
 
+    const schedDays = Array.isArray(sched.days) && sched.days.length > 0 ? sched.days : [1, 2, 3, 4, 5];
+
     card.innerHTML = `
       <div class="schedule-card-header">
         <div class="schedule-time-badge">
@@ -1499,6 +1527,27 @@ function renderSchedulesList() {
           <button type="button" class="btn-del-schedule" title="Eliminar aquest horari" aria-label="Eliminar horari">
             <i class="fa-solid fa-trash-can"></i>
           </button>
+        </div>
+      </div>
+
+      <!-- Days of week selector for this schedule -->
+      <div class="sched-days-row">
+        <div class="sched-days-header">
+          <span class="sched-days-summary-text">${getDaysSummaryText(schedDays)}</span>
+          <span class="sched-days-presets">
+            <button type="button" class="btn-preset-link" data-preset="weekdays">Laborables</button> ·
+            <button type="button" class="btn-preset-link" data-preset="all">Tots</button> ·
+            <button type="button" class="btn-preset-link" data-preset="weekends">Cap de setm.</button>
+          </span>
+        </div>
+        <div class="sched-days-buttons">
+          <button type="button" class="sched-day-btn ${schedDays.includes(1) ? 'active' : ''}" data-day="1" title="Dilluns">Dll</button>
+          <button type="button" class="sched-day-btn ${schedDays.includes(2) ? 'active' : ''}" data-day="2" title="Dimarts">Dm</button>
+          <button type="button" class="sched-day-btn ${schedDays.includes(3) ? 'active' : ''}" data-day="3" title="Dimecres">Dc</button>
+          <button type="button" class="sched-day-btn ${schedDays.includes(4) ? 'active' : ''}" data-day="4" title="Dijous">Dj</button>
+          <button type="button" class="sched-day-btn ${schedDays.includes(5) ? 'active' : ''}" data-day="5" title="Divendres">Dv</button>
+          <button type="button" class="sched-day-btn ${schedDays.includes(6) ? 'active' : ''}" data-day="6" title="Dissabte">Ds</button>
+          <button type="button" class="sched-day-btn ${schedDays.includes(0) ? 'active' : ''}" data-day="0" title="Diumenge">Dg</button>
         </div>
       </div>
 
@@ -1571,7 +1620,42 @@ function renderSchedulesList() {
       showToast('Estacions preferides afegides a aquest horari');
     });
 
-    // 5. Remove station chip
+    // 5. Days of week individual toggles
+    card.querySelectorAll('.sched-day-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = Number(btn.getAttribute('data-day'));
+        if (!Array.isArray(sched.days)) sched.days = [1, 2, 3, 4, 5];
+        if (sched.days.includes(d)) {
+          if (sched.days.length > 1) {
+            sched.days = sched.days.filter(x => x !== d);
+          } else {
+            showToast('Cal tenir seleccionat almenys un dia per horari');
+            return;
+          }
+        } else {
+          sched.days.push(d);
+        }
+        savePreferences(false);
+        renderSchedulesList();
+        updateNotificationPreview();
+      });
+    });
+
+    // Days presets links (Laborables / Tots / Caps de setmana)
+    card.querySelectorAll('.btn-preset-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const preset = link.getAttribute('data-preset');
+        if (preset === 'weekdays') sched.days = [1, 2, 3, 4, 5];
+        else if (preset === 'all') sched.days = [1, 2, 3, 4, 5, 6, 0];
+        else if (preset === 'weekends') sched.days = [6, 0];
+        savePreferences(false);
+        renderSchedulesList();
+        updateNotificationPreview();
+      });
+    });
+
+    // 6. Remove station chip
     card.querySelectorAll('.sched-chip').forEach(chip => {
       const chipDel = chip.querySelector('.sched-chip-del');
       const stationId = Number(chip.getAttribute('data-station-id'));
@@ -1583,7 +1667,7 @@ function renderSchedulesList() {
       });
     });
 
-    // 6. Setup searchable autocomplete for adding stations
+    // 7. Setup searchable autocomplete for adding stations
     setupSchedStationSearch(card, sched, availableStations);
 
     container.appendChild(card);
@@ -1685,10 +1769,6 @@ function setupSchedStationSearch(card, sched, availableStations) {
   });
 }
 
-    container.appendChild(card);
-  });
-}
-
 function addNewSchedule() {
   const timeInput = document.getElementById('new-schedule-time');
   const timeVal = (timeInput && timeInput.value) ? timeInput.value : '08:00';
@@ -1701,6 +1781,7 @@ function addNewSchedule() {
     id: `sched-${Date.now()}`,
     time: timeVal,
     enabled: true,
+    days: [1, 2, 3, 4, 5],
     stationIds: (state.favorites.size > 0) ? Array.from(state.favorites).map(Number) : []
   };
 
@@ -1936,8 +2017,6 @@ function checkScheduledNotifications() {
 
   const now = new Date();
   const day = now.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
-  if (prefs.daysMode === 'weekdays' && (day === 0 || day === 6)) return;
-  if (prefs.daysMode === 'weekends' && (day >= 1 && day <= 5)) return;
 
   const curH = now.getHours();
   const curM = now.getMinutes();
@@ -1950,6 +2029,16 @@ function checkScheduledNotifications() {
   // but were missed because the phone/app was asleep/suspended
   const dueSchedules = (prefs.schedules || []).filter(sched => {
     if (!sched.enabled || !sched.time) return false;
+
+    // Check individual days for this schedule
+    if (Array.isArray(sched.days) && sched.days.length > 0) {
+      if (!sched.days.map(Number).includes(day)) return false;
+    } else if (prefs.daysMode === 'weekdays') {
+      if (day === 0 || day === 6) return false;
+    } else if (prefs.daysMode === 'weekends') {
+      if (day >= 1 && day <= 5) return false;
+    }
+
     const [sH, sM] = sched.time.split(':').map(Number);
     const schedTotalMins = sH * 60 + sM;
     const schedKey = `${todayKey}_${sched.id || sched.time}`;
