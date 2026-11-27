@@ -20,6 +20,12 @@
       "purpose": "any maskable"
     },
     {
+      "src": "girocleta-bike.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
       "src": "girocleta-logo.svg",
       "sizes": "any",
       "type": "image/svg+xml"
