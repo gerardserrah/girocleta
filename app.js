@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const cfg = JSON.parse(customConfig);
       const root = document.documentElement;
       if (cfg.logoH) root.style.setProperty('--header-logo-height', `${cfg.logoH}px`);
+      if (cfg.logoW) root.style.setProperty('--header-logo-width', `${cfg.logoW}px`);
       if (cfg.headPt) root.style.setProperty('--header-padding-top', `max(${cfg.headPt}px, env(safe-area-inset-top, ${cfg.headPt}px))`);
       if (cfg.headPb) root.style.setProperty('--header-padding-bottom', `${cfg.headPb}px`);
       if (cfg.headRad !== undefined) root.style.setProperty('--header-radius', `${cfg.headRad}px`);
