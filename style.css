@@ -67,29 +67,73 @@
   overflow: visible;
 }
 
-/* 1. Central Bike Intro Animation */
-@keyframes bikeIntro {
+/* 1. Central Bike: subtle rolling ride cadence */
+@keyframes bikeRoll {
   0% {
-    opacity: 0;
-    transform: scale(0.85);
+    transform: translateY(0);
   }
-  60% {
-    opacity: 1;
-    transform: scale(1.04);
+  25% {
+    transform: translateY(-2.5px);
+  }
+  50% {
+    transform: translateY(1.5px);
+  }
+  75% {
+    transform: translateY(-1px);
   }
   100% {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
 .splash-anim-bike {
   transform-box: view-box;
   transform-origin: 480px 200px;
-  animation: bikeIntro 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  animation: bikeRoll 0.65s ease-in-out 0.15s forwards;
 }
 
-/* 2. 'Gir' reveals sliding out from bike to the left */
+/* 2. Wheels 360-degree rotation animation */
+@keyframes spinWheelRear {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes spinWheelFront {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.splash-spokes-rear {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spinWheelRear 0.65s cubic-bezier(0.25, 0.1, 0.25, 1) 0.15s forwards;
+}
+
+.splash-spokes-front {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spinWheelFront 0.65s cubic-bezier(0.25, 0.1, 0.25, 1) 0.15s forwards;
+}
+
+/* 3. 'Gir' reveals sliding out from bike to the left */
 @keyframes revealGir {
   0% {
     opacity: 0;
@@ -109,7 +153,7 @@
   animation: revealGir 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
 }
 
-/* 3. 'leta' reveals sliding out from bike to the right */
+/* 4. 'leta' reveals sliding out from bike to the right */
 @keyframes revealLeta {
   0% {
     opacity: 0;
@@ -150,8 +194,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash-anim-wheel-rear,
-  .splash-anim-wheel-front,
+  .splash-spokes-rear,
+  .splash-spokes-front,
   .splash-anim-gir,
   .splash-anim-leta {
     animation: none !important;
