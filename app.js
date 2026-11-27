@@ -232,6 +232,7 @@ async function loadStationData() {
 
     // 2. Fetch live updates from CityBik API
     await fetchLiveCityBikData();
+    checkScheduledNotifications();
   } catch (err) {
     console.warn('Error loading initial data:', err);
     updateStatus('Sense dades en viu', false);
@@ -1368,6 +1369,7 @@ function renderSchedulesList() {
     const timeInput = card.querySelector('.sched-time-input');
     timeInput.addEventListener('change', (e) => {
       sched.time = e.target.value;
+      savePreferences(false);
       renderSchedulesList();
       updateNotificationPreview();
     });
@@ -1377,6 +1379,7 @@ function renderSchedulesList() {
     toggle.addEventListener('change', (e) => {
       sched.enabled = e.target.checked;
       card.classList.toggle('disabled', !sched.enabled);
+      savePreferences(false);
       updateNotificationPreview();
     });
 
@@ -1384,6 +1387,7 @@ function renderSchedulesList() {
     const delBtn = card.querySelector('.btn-del-schedule');
     delBtn.addEventListener('click', () => {
       state.preferences.schedules = state.preferences.schedules.filter(s => s.id !== sched.id);
+      savePreferences(false);
       renderSchedulesList();
       updateNotificationPreview();
     });
@@ -1398,6 +1402,7 @@ function renderSchedulesList() {
       const existing = new Set((sched.stationIds || []).map(Number));
       state.favorites.forEach(id => existing.add(Number(id)));
       sched.stationIds = Array.from(existing);
+      savePreferences(false);
       renderSchedulesList();
       updateNotificationPreview();
       showToast('Estacions preferides afegides a aquest horari');
@@ -1409,6 +1414,7 @@ function renderSchedulesList() {
       const stationId = Number(chip.getAttribute('data-station-id'));
       chipDel.addEventListener('click', () => {
         sched.stationIds = sched.stationIds.filter(id => Number(id) !== stationId);
+        savePreferences(false);
         renderSchedulesList();
         updateNotificationPreview();
       });
@@ -1423,6 +1429,7 @@ function renderSchedulesList() {
       if (!Array.isArray(sched.stationIds)) sched.stationIds = [];
       if (!sched.stationIds.includes(stId)) {
         sched.stationIds.push(stId);
+        savePreferences(false);
         renderSchedulesList();
         updateNotificationPreview();
       }
@@ -1448,6 +1455,7 @@ function addNewSchedule() {
   };
 
   state.preferences.schedules.push(newSched);
+  savePreferences(false);
   renderSchedulesList();
   updateNotificationPreview();
   showToast(`Nou horari afegit (${timeVal})`);
@@ -1499,6 +1507,7 @@ function bindPreferencesEvents() {
   toggle?.addEventListener('change', (e) => {
     const enabled = e.target.checked;
     state.preferences.notificationsEnabled = enabled;
+    savePreferences(false);
     document.getElementById('pref-config-container')?.classList.toggle('disabled', !enabled);
     if (enabled && 'Notification' in window && Notification.permission === 'default') {
       requestNotificationPermission();
@@ -1515,22 +1524,27 @@ function bindPreferencesEvents() {
       document.querySelectorAll('#seg-days-mode .seg-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.preferences.daysMode = btn.getAttribute('data-days');
+      savePreferences(false);
     });
   });
 
   // Filters
   document.getElementById('check-low-bikes')?.addEventListener('change', (e) => {
     state.preferences.alertOnlyIfLowBikes = e.target.checked;
+    savePreferences(false);
   });
   document.getElementById('num-min-bikes')?.addEventListener('change', (e) => {
     state.preferences.minBikesThreshold = parseInt(e.target.value, 10) || 3;
+    savePreferences(false);
   });
 
   document.getElementById('check-low-slots')?.addEventListener('change', (e) => {
     state.preferences.alertOnlyIfLowSlots = e.target.checked;
+    savePreferences(false);
   });
   document.getElementById('num-min-slots')?.addEventListener('change', (e) => {
     state.preferences.minSlotsThreshold = parseInt(e.target.value, 10) || 3;
+    savePreferences(false);
   });
 
   // Save Preferences Button
@@ -1641,7 +1655,7 @@ function fallbackNotification(title, body, stationId) {
   }
 }
 
-// Periodic Scheduled Notification Checker (Called every 30s)
+// Periodic Scheduled Notification Checker (Called on startup and every 30s)
 function checkScheduledNotifications() {
   const prefs = state.preferences;
   if (!prefs || !prefs.notificationsEnabled) return;
@@ -1653,49 +1667,56 @@ function checkScheduledNotifications() {
   if (prefs.daysMode === 'weekdays' && (day === 0 || day === 6)) return;
   if (prefs.daysMode === 'weekends' && (day >= 1 && day <= 5)) return;
 
-  const hours = String(now.getHours()).padStart(2, '0');
-  const mins = String(now.getMinutes()).padStart(2, '0');
-  const currentTime = `${hours}:${mins}`;
+  const curH = now.getHours();
+  const curM = now.getMinutes();
+  const curTotalMins = curH * 60 + curM;
   const todayKey = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
-  const notifKey = `${todayKey}_${currentTime}`;
 
-  if (prefs.lastNotifiedKey === notifKey) return;
+  if (!prefs.lastNotifiedMap) prefs.lastNotifiedMap = {};
 
-  // Find all active schedules configured for this minute
-  const activeSchedules = (prefs.schedules || []).filter(s => s.enabled && s.time === currentTime);
-  if (activeSchedules.length === 0) return;
+  // Find active schedules that match now (exact minute) OR were scheduled in the last 30 minutes
+  // but were missed because the phone/app was asleep/suspended
+  const dueSchedules = (prefs.schedules || []).filter(sched => {
+    if (!sched.enabled || !sched.time) return false;
+    const [sH, sM] = sched.time.split(':').map(Number);
+    const schedTotalMins = sH * 60 + sM;
+    const schedKey = `${todayKey}_${sched.id || sched.time}`;
 
-  // Mark as triggered for this minute
-  prefs.lastNotifiedKey = notifKey;
-  savePreferences(false);
+    if (prefs.lastNotifiedMap[schedKey]) return false;
 
-  // Collect target station IDs from all schedules active at this time
-  const targetStationIdSet = new Set();
-  activeSchedules.forEach(sched => {
-    if (Array.isArray(sched.stationIds) && sched.stationIds.length > 0) {
-      sched.stationIds.forEach(id => targetStationIdSet.add(Number(id)));
-    } else {
-      // If none explicitly selected, fallback to user's favorites
-      state.favorites.forEach(id => targetStationIdSet.add(Number(id)));
+    const diff = curTotalMins - schedTotalMins;
+    // Due if exact minute OR if missed within the past 30 minutes
+    return diff >= 0 && diff <= 30;
+  });
+
+  if (dueSchedules.length === 0) return;
+
+  dueSchedules.forEach(sched => {
+    const schedKey = `${todayKey}_${sched.id || sched.time}`;
+    prefs.lastNotifiedMap[schedKey] = true;
+
+    // Collect target station IDs
+    let targetStationIds = Array.isArray(sched.stationIds) && sched.stationIds.length > 0
+      ? sched.stationIds.map(Number)
+      : Array.from(state.favorites).map(Number);
+
+    let targetStations = state.stations.filter(s => targetStationIds.includes(Number(s.id)));
+    if (targetStations.length === 0) return;
+
+    if (prefs.alertOnlyIfLowBikes || prefs.alertOnlyIfLowSlots) {
+      targetStations = targetStations.filter(s => {
+        let match = false;
+        if (prefs.alertOnlyIfLowBikes && s.bikes <= (prefs.minBikesThreshold || 3)) match = true;
+        if (prefs.alertOnlyIfLowSlots && s.slots <= (prefs.minSlotsThreshold || 3)) match = true;
+        return match;
+      });
     }
-  });
 
-  let targetStations = state.stations.filter(s => targetStationIdSet.has(Number(s.id)));
-  if (targetStations.length === 0) return;
-
-  // Optional Filtering conditions
-  if (prefs.alertOnlyIfLowBikes || prefs.alertOnlyIfLowSlots) {
-    targetStations = targetStations.filter(s => {
-      let match = false;
-      if (prefs.alertOnlyIfLowBikes && s.bikes <= (prefs.minBikesThreshold || 3)) match = true;
-      if (prefs.alertOnlyIfLowSlots && s.slots <= (prefs.minSlotsThreshold || 3)) match = true;
-      return match;
+    targetStations.slice(0, 3).forEach(station => {
+      dispatchStationPushNotification(station, false);
     });
-  }
-
-  // Dispatch notifications (max 4 at once to prevent spam)
-  targetStations.slice(0, 4).forEach(station => {
-    dispatchStationPushNotification(station, false);
   });
+
+  savePreferences(false);
 }
 
