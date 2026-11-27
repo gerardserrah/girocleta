@@ -180,10 +180,16 @@
 html, body {
   width: 100%;
   height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  height: -webkit-fill-available;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow: hidden;
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: var(--text-main);
-  background-color: #e5e7eb;
+  background-color: #026838;
 }
 
 /* ==========================================================================
@@ -191,7 +197,10 @@ html, body {
    ========================================================================== */
 #map {
   width: 100vw;
+  height: 100%;
   height: 100vh;
+  height: 100dvh;
+  height: -webkit-fill-available;
   position: absolute;
   top: 0;
   left: 0;
@@ -233,201 +242,172 @@ html, body {
 }
 
 /* ==========================================================================
-   Header Floating Island
+   App Top Header (SMOU style: extends edge-to-edge from top edge down past logo)
    ========================================================================== */
-.header-floating {
+.app-top-header {
   position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
+  width: 100%;
   z-index: 1000;
-  width: min(94vw, 680px);
-  background: var(--bg-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  padding: 12px 18px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
-}
-
-/* Header Top: Logo & Live Status */
-.header-top {
+  background: #026838; /* Girocleta Brand Green */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22);
+  padding-top: max(10px, env(safe-area-inset-top, 10px));
+  padding-bottom: 12px;
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(0, 104, 55, 0.08);
-  padding-bottom: 8px;
+  box-sizing: border-box;
 }
 
-.brand-container {
+.app-top-header .top-header-side {
+  width: 44px;
   display: flex;
+  align-items: center;
+}
+.app-top-header .top-header-side.left {
+  justify-content: flex-start;
+}
+.app-top-header .top-header-side.right {
+  justify-content: flex-end;
+}
+
+.app-top-header .brand-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
   align-items: center;
   cursor: pointer;
   user-select: none;
-  transition: opacity var(--transition-fast);
 }
-.brand-container:hover {
-  opacity: 0.85;
-}
-.brand-logo {
-  height: 38px;
+.app-top-header .brand-logo {
+  height: 44px;
+  max-height: 48px;
   width: auto;
-  max-width: 170px;
+  max-width: 220px;
   object-fit: contain;
   display: block;
-  border-radius: 6px;
 }
 
-.header-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.status-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(0, 104, 55, 0.06);
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(0, 104, 55, 0.12);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--primary-green-dark);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #10b981;
+.app-top-header .btn-icon {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  animation: pulse-dot 2s infinite;
-}
-
-@keyframes pulse-dot {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--surface-border);
-  background: white;
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 15px;
   cursor: pointer;
-  font-size: 13px;
-  transition: all var(--transition-fast);
+  transition: all 0.2s ease;
 }
-.btn-icon:hover {
-  color: var(--primary-green);
-  border-color: var(--primary-green);
-  background: #f0fdf4;
+.app-top-header .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #F9BF3B;
   transform: rotate(45deg);
 }
-.btn-icon.spinning i {
+.app-top-header .btn-icon.spinning i {
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin {
   100% { transform: rotate(360deg); }
 }
 
-/* Action Navigation Buttons */
-.action-nav {
+/* ==========================================================================
+   Bottom Navigation Bar (Icon-only, iOS Dock Style)
+   ========================================================================== */
+.bottom-nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.08);
+  padding-top: 8px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+  padding-left: 12px;
+  padding-right: 12px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding: 1px 2px 3px 2px;
+  justify-content: space-around;
+  box-sizing: border-box;
 }
 
-.action-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.nav-btn {
-  flex: 0 0 auto;
-  min-width: max-content;
-  display: inline-flex;
+.bottom-nav-bar .nav-btn {
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: white;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
+  width: 48px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 20px;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.nav-btn i {
-  font-size: 13px;
-  color: var(--primary-green);
-  transition: transform var(--transition-fast);
+.bottom-nav-bar .nav-btn:hover {
+  color: #026838;
+  background: rgba(2, 104, 56, 0.08);
+  transform: translateY(-2px);
 }
 
-.nav-btn:hover {
-  background: #f0fdf4;
-  border-color: rgba(0, 104, 55, 0.3);
-  color: var(--primary-green-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+.bottom-nav-bar .nav-btn.active {
+  color: #ffffff;
+  background: #026838;
+  box-shadow: 0 4px 12px rgba(2, 104, 56, 0.35);
 }
 
-.nav-btn:active {
-  transform: translateY(0);
-}
-
-.nav-btn.active {
-  background: var(--primary-green);
-  border-color: var(--primary-green);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 104, 55, 0.25);
-}
-
-.nav-btn.active i {
-  color: white;
-}
-
-.badge {
-  background: #ef4444;
-  color: white;
-  font-size: 10px;
+.bottom-nav-bar .nav-btn .badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 9px;
   font-weight: 700;
-  padding: 1px 6px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 4px;
   border-radius: 10px;
-  margin-left: 2px;
+  background: #e11d48;
+  color: white;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Popup Walking Distance Badge */
+.popup-walking-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid rgba(2, 104, 56, 0.2);
+  color: #026838;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin: 6px 0 10px 0;
+  box-sizing: border-box;
+}
+.popup-walking-badge i {
+  font-size: 14px;
+  color: #026838;
 }
 
 /* ==========================================================================
@@ -1059,34 +1039,24 @@ html, body {
    Mobile Responsive Styles
    ========================================================================== */
 @media (max-width: 640px) {
-  .header-floating {
-    top: 10px;
-    width: 95vw;
-    padding: 10px 12px 8px;
-    gap: 8px;
-    border-radius: 16px;
+  .app-top-header {
+    padding-top: max(8px, env(safe-area-inset-top, 8px));
+    padding-bottom: 10px;
   }
-  .brand-logo {
-    height: 30px;
-    max-width: 130px;
+  .app-top-header .brand-logo {
+    height: 38px;
+    max-width: 180px;
   }
-  .status-text {
-    display: none;
+  .bottom-nav-bar {
+    padding-top: 6px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    padding-left: 8px;
+    padding-right: 8px;
   }
-  .status-indicator {
-    padding: 4px 6px;
-  }
-  .action-nav {
-    gap: 6px;
-    padding: 1px 1px 3px 1px;
-  }
-  .nav-btn {
-    padding: 7px 11px;
-    font-size: 12px;
-    gap: 5px;
-  }
-  .nav-btn i {
-    font-size: 12px;
+  .bottom-nav-bar .nav-btn {
+    width: 44px;
+    height: 42px;
+    font-size: 19px;
   }
   .quick-stats-pill {
     bottom: 16px;

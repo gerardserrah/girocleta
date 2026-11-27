@@ -1,0 +1,15 @@
+name: Scheduled Girocleta Push Notifications Check
+
+on:
+  schedule:
+    # Run every 5 minutes around the clock
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Girocleta Push API Cron
+        run: |
+          curl -s -f -m 15 https://girocleta.gerard.sh/api/cron || echo "Cron triggered"

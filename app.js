@@ -204,9 +204,6 @@ function initMap() {
   // Apply saved or default tile layer
   applyTileLayer(state.currentLayerKey, false);
 
-  // Zoom control in bottom right
-  L.control.zoom({ position: 'bottomright' }).addTo(state.map);
-
   // Listen to map rotation changes to update compass needle
   state.map.on('rotate', updateCompassUI);
 
@@ -374,6 +371,28 @@ function createPopupContent(station) {
   const bikePercent = Math.round((station.bikes / total) * 100);
   const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lon}&travelmode=walking`;
 
+  let walkingBadge = '';
+  let dist = null;
+  if (state.userLocation && typeof state.userLocation.lat === 'number') {
+    dist = getDistanceMeters(state.userLocation.lat, state.userLocation.lon, station.lat, station.lon);
+  } else if (state.userMarker) {
+    const u = state.userMarker.getLatLng();
+    dist = getDistanceMeters(u.lat, u.lng, station.lat, station.lon);
+  } else if (typeof station.distanceMeters === 'number') {
+    dist = station.distanceMeters;
+  }
+
+  if (dist !== null && !isNaN(dist)) {
+    const mins = Math.max(1, Math.round(dist / 80));
+    const distFormatted = dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`;
+    walkingBadge = `
+      <div class="popup-walking-badge">
+        <i class="fa-solid fa-person-walking"></i>
+        <span>A <strong>${mins} min</strong> a peu (${distFormatted})</span>
+      </div>
+    `;
+  }
+
   return `
     <div class="popup-card">
       <div class="popup-header">
@@ -392,6 +411,7 @@ function createPopupContent(station) {
         <i class="fa-solid fa-location-dot"></i>
         <span>${station.address || 'Girona'}</span>
       </div>
+      ${walkingBadge}
 
       <div class="popup-stats-grid">
         <div class="popup-stat-box bikes-box">
