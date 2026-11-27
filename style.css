@@ -34,6 +34,148 @@
   --transition-smooth: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ==========================================================================
+   Animated Splash Screen (1.5s Intro)
+   ========================================================================== */
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #026838;
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  animation: splashFadeOut 0.28s ease-in 1.22s forwards;
+  overflow: hidden;
+}
+
+.splash-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 85vw;
+  max-width: 380px;
+}
+
+.splash-logo-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* 1. Wheels 360-degree rotation */
+@keyframes spinWheelRear {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinWheelFront {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.splash-anim-wheel-rear {
+  transform-origin: 110.2px 56.25px;
+  animation: spinWheelRear 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+}
+
+.splash-anim-wheel-front {
+  transform-origin: 143.5px 56.25px;
+  animation: spinWheelFront 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+}
+
+/* 2. 'Gir' reveals sliding out from bike to the left */
+@keyframes revealGir {
+  0% {
+    opacity: 0;
+    transform: translateX(45px);
+    clip-path: inset(0 0 0 100%);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    clip-path: inset(0 0 0 0%);
+  }
+}
+
+.splash-anim-gir {
+  opacity: 0;
+  animation: revealGir 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.38s forwards;
+}
+
+/* 3. 'leta' reveals sliding out from bike to the right */
+@keyframes revealLeta {
+  0% {
+    opacity: 0;
+    transform: translateX(-45px);
+    clip-path: inset(0 100% 0 0);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.splash-anim-leta {
+  opacity: 0;
+  animation: revealLeta 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.38s forwards;
+}
+
+/* 4. Splash Screen Fade Out */
+@keyframes splashFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    visibility: visible;
+  }
+  99% {
+    opacity: 0;
+    transform: scale(1.03);
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.03);
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-anim-wheel-rear,
+  .splash-anim-wheel-front,
+  .splash-anim-gir,
+  .splash-anim-leta {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+  }
+  .splash-screen {
+    animation-duration: 0.2s !important;
+    animation-delay: 0.3s !important;
+  }
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;

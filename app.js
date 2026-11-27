@@ -156,6 +156,15 @@ const state = {
 // Initialization
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Remove animated splash screen after 1.5s
+  setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+      splash.style.display = 'none';
+      splash.remove();
+    }
+  }, 1500);
+
   loadFavorites();
   loadPreferences();
   initMap();
