@@ -3,17 +3,18 @@
    ========================================================================== */
 
 :root {
-  --primary-green: #006837;
-  --primary-green-light: #0d8b4e;
-  --primary-green-dark: #004b27;
-  --accent-yellow: #f59e0b;
+  --primary-green: #026838;
+  --primary-green-light: #0b7c46;
+  --primary-green-dark: #014d28;
+  --accent-yellow: #f9bf3b;
+  --accent-yellow-dark: #e5ab2a;
   --accent-red: #ef4444;
   --accent-blue: #2563eb;
   
   --bg-glass: rgba(255, 255, 255, 0.92);
   --bg-glass-subtle: rgba(255, 255, 255, 0.75);
-  --border-glass: rgba(0, 104, 55, 0.12);
-  --shadow-lg: 0 14px 34px -8px rgba(0, 40, 20, 0.18), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+  --border-glass: rgba(2, 104, 56, 0.15);
+  --shadow-lg: 0 14px 34px -8px rgba(2, 104, 56, 0.22), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 6px 18px -4px rgba(0, 0, 0, 0.1);
   --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
 
@@ -143,6 +144,7 @@ html, body {
   max-width: 170px;
   object-fit: contain;
   display: block;
+  border-radius: 6px;
 }
 
 .header-status {
@@ -363,10 +365,10 @@ html, body {
 
 /* Bike availability colors */
 .badge-side.bikes.status-high {
-  background: linear-gradient(135deg, #10b981, #006837);
+  background: linear-gradient(135deg, #0b7c46, #026838);
 }
 .badge-side.bikes.status-medium {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #f9bf3b, #d97706);
 }
 .badge-side.bikes.status-empty {
   background: linear-gradient(135deg, #ef4444, #b91c1c);
@@ -398,7 +400,7 @@ html, body {
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 7px solid #006837;
+  border-top: 7px solid #026838;
   margin-top: -1px;
 }
 
@@ -1928,7 +1930,7 @@ input:checked + .slider:before {
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: #006837;
+  background: var(--primary-green);
   color: white;
   font-size: 13px;
   font-weight: 700;
@@ -1938,7 +1940,7 @@ input:checked + .slider:before {
   transition: background var(--transition-fast);
 }
 .btn-add-schedule:hover {
-  background: #004d28;
+  background: var(--primary-green-dark);
 }
 
 /* ==========================================================================

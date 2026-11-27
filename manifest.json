@@ -4,10 +4,15 @@
   "description": "Visualització interactiva en temps real de les bicicletes i aparcaments de Girocleta a Girona amb alertes i notificacions personalitzades.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#006837",
+  "background_color": "#026838",
+  "theme_color": "#026838",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
     {
       "src": "girocleta_logo.png",
       "sizes": "512x512",
