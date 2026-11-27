@@ -88,13 +88,13 @@
 
 .splash-anim-wheel-rear {
   transform-box: view-box;
-  transform-origin: 419px 241.5px;
+  transform-origin: 420px 241.5px;
   animation: spinWheelRear 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
 }
 
 .splash-anim-wheel-front {
   transform-box: view-box;
-  transform-origin: 550px 226px;
+  transform-origin: 550.5px 231px;
   animation: spinWheelFront 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
 }
 
