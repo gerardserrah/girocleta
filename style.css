@@ -41,8 +41,8 @@
   --header-radius: 24px;
   --drawer-header-padding-top: max(56px, calc(env(safe-area-inset-top, 24px) + 32px));
   --drawer-header-padding-bottom: 18px;
-  --drawer-content-padding-bottom: max(32px, calc(env(safe-area-inset-bottom, 24px) + 20px));
-  --bottom-dock-padding-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+  --drawer-content-padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  --bottom-dock-padding-bottom: 8px;
   --bottom-dock-btn-size: 44px;
 }
 
@@ -189,16 +189,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background-color: #026838; /* Girocleta green for top status bar overscroll */
-}
-
-body {
+html, body {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -206,7 +197,7 @@ body {
   overflow: hidden;
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: var(--text-main);
-  background-color: #ffffff; /* Clean white base so bottom dock & drawers never bleed green */
+  background-color: #026838;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -280,17 +271,6 @@ body {
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
-}
-
-.app-top-header::before {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
-  height: 200px;
-  background: #026838;
-  pointer-events: none;
 }
 
 .app-top-header .top-header-side {
@@ -410,7 +390,9 @@ body {
   top: 100%;
   left: 0;
   right: 0;
-  height: 150px;
+  height: env(safe-area-inset-bottom, 38px);
+  min-height: 34px;
+  max-height: 44px;
   background: rgba(255, 255, 255, 0.98);
   pointer-events: none;
 }
@@ -836,7 +818,9 @@ body {
   top: 100%;
   left: 0;
   right: 0;
-  height: 150px;
+  height: env(safe-area-inset-bottom, 38px);
+  min-height: 34px;
+  max-height: 44px;
   background: white;
   pointer-events: none;
 }

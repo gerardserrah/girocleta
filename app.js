@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cfg.drawPt) root.style.setProperty('--drawer-header-padding-top', `max(${cfg.drawPt}px, calc(env(safe-area-inset-top, 24px) + ${cfg.drawPt - 24}px))`);
       if (cfg.drawPb) root.style.setProperty('--drawer-content-padding-bottom', `max(${cfg.drawPb}px, env(safe-area-inset-bottom, ${cfg.drawPb}px))`);
       if (cfg.dockBtn) root.style.setProperty('--bottom-dock-btn-size', `${cfg.dockBtn}px`);
-      if (cfg.dockPb) root.style.setProperty('--bottom-dock-padding-bottom', `max(${cfg.dockPb}px, env(safe-area-inset-bottom, ${cfg.dockPb}px))`);
+      if (cfg.dockPb !== undefined) root.style.setProperty('--bottom-dock-padding-bottom', `${cfg.dockPb}px`);
     }
   } catch (e) {}
 
