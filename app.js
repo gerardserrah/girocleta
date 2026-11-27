@@ -357,7 +357,13 @@ function renderAllMarkers() {
 
     marker.bindPopup(() => createPopupContent(station), {
       maxWidth: 290,
-      className: 'giro-custom-popup'
+      className: 'giro-custom-popup',
+      autoPan: false // We will handle smooth centering directly on click/popupopen
+    });
+
+    // Quan es clica el marcador o s'obre el popup, centrar el mapa exactament al requadre (popup)
+    marker.on('popupopen', (e) => {
+      centerMapOnPopup(station, e.popup);
     });
 
     marker.addTo(state.map);
@@ -441,6 +447,41 @@ function createPopupContent(station) {
       </div>
     </div>
   `;
+}
+
+// Center map accurately on the popup box (considering top header and bottom nav)
+function centerMapOnPopup(station, popup) {
+  if (!state.map) return;
+
+  // Let DOM render popup to get its real height, or use estimated ~230px
+  setTimeout(() => {
+    try {
+      const popupEl = popup ? popup.getElement() : null;
+      const popupHeight = popupEl ? popupEl.offsetHeight : 230;
+      
+      // Top SMOU header takes ~60px, bottom nav takes ~70px
+      // The popup arrow is at the station location (bottom of popup)
+      // Moving the popup center to the visual center of available map area:
+      // station coordinate is at the bottom of the popup (y_station).
+      // Popup center is roughly (popupHeight / 2) px above the marker pin.
+      // Top header offset vs bottom nav offset:
+      // visual center shift: topHeaderHeight/2 - bottomNavHeight/2 ~= -5px.
+      // Net vertical pixel offset needed so the popup box is right in the center:
+      const yOffset = Math.round((popupHeight / 2) + 25);
+
+      const targetPoint = state.map.project([station.lat, station.lon], state.map.getZoom()).subtract([0, yOffset]);
+      const targetLatLng = state.map.unproject(targetPoint, state.map.getZoom());
+
+      state.map.panTo(targetLatLng, {
+        animate: true,
+        duration: 0.6,
+        easeLinearity: 0.25
+      });
+    } catch (e) {
+      // Fallback: direct pan to station
+      state.map.panTo([station.lat, station.lon], { animate: true });
+    }
+  }, 50);
 }
 
 // ==========================================================================
@@ -828,13 +869,14 @@ function flyToStation(stationId) {
   const station = state.stations.find(s => s.id === stationId);
   if (!station) return;
 
-  state.map.flyTo([station.lat, station.lon], 16, { duration: 1 });
-
   const marker = state.stationMarkers[stationId];
   if (marker) {
+    // Open popup after closing drawer
     setTimeout(() => {
       marker.openPopup();
-    }, 700);
+    }, 400);
+  } else {
+    state.map.flyTo([station.lat, station.lon], 16, { duration: 0.8 });
   }
 
   if (window.innerWidth <= 640) {
