@@ -41,8 +41,8 @@
   --header-radius: 24px;
   --drawer-header-padding-top: max(56px, calc(env(safe-area-inset-top, 24px) + 32px));
   --drawer-header-padding-bottom: 18px;
-  --drawer-content-padding-bottom: max(32px, env(safe-area-inset-bottom, 32px));
-  --bottom-dock-padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  --drawer-content-padding-bottom: max(32px, calc(env(safe-area-inset-bottom, 24px) + 20px));
+  --bottom-dock-padding-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
   --bottom-dock-btn-size: 44px;
 }
 
@@ -189,22 +189,25 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html {
   width: 100%;
-  width: 100vw;
   height: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: -webkit-fill-available;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #026838; /* Girocleta green for top status bar overscroll */
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: var(--text-main);
-  background-color: #026838;
+  background-color: #ffffff; /* Clean white base so bottom dock & drawers never bleed green */
+  -webkit-text-size-adjust: 100%;
 }
 
 /* ==========================================================================
@@ -212,17 +215,14 @@ html, body {
    ========================================================================== */
 #map {
   width: 100%;
-  width: 100vw;
   height: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: -webkit-fill-available;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 1;
+  background-color: #f1f5f9;
 }
 
 /* Leaflet Customizations */
@@ -280,6 +280,17 @@ html, body {
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
+}
+
+.app-top-header::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: #026838;
+  pointer-events: none;
 }
 
 .app-top-header .top-header-side {
@@ -391,6 +402,17 @@ html, body {
   align-items: center;
   justify-content: space-around;
   box-sizing: border-box;
+}
+
+.bottom-nav-bar::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.98);
+  pointer-events: none;
 }
 
 .bottom-nav-bar .nav-btn {
@@ -797,11 +819,7 @@ html, body {
   right: 0;
   bottom: 0;
   width: 100%;
-  width: 100vw;
   height: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: -webkit-fill-available;
   background: white;
   z-index: 99999;
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
@@ -810,6 +828,17 @@ html, body {
   transform: translateX(100%);
   transition: transform var(--transition-smooth);
   box-sizing: border-box;
+}
+
+.side-drawer::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 150px;
+  background: white;
+  pointer-events: none;
 }
 .side-drawer.open {
   transform: translateX(0);
@@ -1131,13 +1160,12 @@ html, body {
     display: none; /* Hide legend on small screens to save space */
   }
   .side-drawer {
-    width: 100vw;
+    width: 100%;
     height: 100%;
-    height: 100vh;
-    height: 100dvh;
-    min-height: -webkit-fill-available;
     top: 0;
     bottom: 0;
+    left: 0;
+    right: 0;
   }
 }
 
