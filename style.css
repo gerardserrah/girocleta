@@ -32,6 +32,18 @@
   
   --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-smooth: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Configurable UI variables (can be adjusted via Configurator) */
+  --header-padding-top: max(16px, env(safe-area-inset-top, 16px));
+  --header-padding-bottom: 14px;
+  --header-logo-height: 52px;
+  --header-logo-max-width: 280px;
+  --header-radius: 24px;
+  --drawer-header-padding-top: max(56px, calc(env(safe-area-inset-top, 24px) + 32px));
+  --drawer-header-padding-bottom: 18px;
+  --drawer-content-padding-bottom: max(32px, env(safe-area-inset-bottom, 32px));
+  --bottom-dock-padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+  --bottom-dock-btn-size: 44px;
 }
 
 /* ==========================================================================
@@ -252,25 +264,79 @@ html, body {
   z-index: 1000;
   background: #026838; /* Girocleta Brand Green */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22);
-  padding-top: max(14px, env(safe-area-inset-top, 14px));
-  padding-bottom: 14px;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-bottom-left-radius: 24px;
-  border-bottom-right-radius: 24px;
+  padding-top: var(--header-padding-top);
+  padding-bottom: var(--header-padding-bottom);
+  padding-left: 16px;
+  padding-right: 16px;
+  border-bottom-left-radius: var(--header-radius);
+  border-bottom-right-radius: var(--header-radius);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   box-sizing: border-box;
 }
 
+.app-top-header .top-header-side {
+  width: 44px;
+  display: flex;
+  align-items: center;
+}
+.app-top-header .top-header-side.left {
+  justify-content: flex-start;
+}
+.app-top-header .top-header-side.right {
+  justify-content: flex-end;
+}
+
+.btn-header-bell {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-header-bell:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #F9BF3B;
+  transform: scale(1.08);
+}
+.btn-header-bell:active {
+  transform: scale(0.94);
+}
+.btn-header-bell .badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #F9BF3B;
+  color: #026838;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 800;
+  border: 1.5px solid #026838;
+}
+
 .app-top-header .brand-container {
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   user-select: none;
-  padding: 4px 12px;
+  padding: 4px 8px;
   border-radius: 14px;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
   -webkit-tap-highlight-color: transparent;
@@ -280,10 +346,10 @@ html, body {
   opacity: 0.9;
 }
 .app-top-header .brand-logo {
-  height: 52px;
-  max-height: 56px;
+  height: var(--header-logo-height);
+  max-height: 60px;
   width: auto;
-  max-width: 280px;
+  max-width: var(--header-logo-max-width);
   object-fit: contain;
   display: block;
   transition: transform 0.5s ease;
@@ -721,14 +787,17 @@ html, body {
 .side-drawer {
   position: fixed;
   top: 0;
+  left: 0;
   right: 0;
   bottom: 0;
+  width: 100%;
+  width: 100vw;
   height: 100%;
+  height: 100vh;
   height: 100dvh;
   min-height: -webkit-fill-available;
-  width: min(90vw, 420px);
   background: white;
-  z-index: 1100;
+  z-index: 99999;
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
@@ -741,8 +810,8 @@ html, body {
 }
 
 .drawer-header {
-  padding-top: max(18px, env(safe-area-inset-top, 18px));
-  padding-bottom: 14px;
+  padding-top: var(--drawer-header-padding-top);
+  padding-bottom: var(--drawer-header-padding-bottom);
   padding-left: 20px;
   padding-right: 20px;
   display: flex;
@@ -863,7 +932,7 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 12px 16px;
-  padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  padding-bottom: var(--drawer-content-padding-bottom);
 }
 
 .stations-list {
@@ -1027,23 +1096,23 @@ html, body {
    ========================================================================== */
 @media (max-width: 640px) {
   .app-top-header {
-    padding-top: max(12px, env(safe-area-inset-top, 12px));
-    padding-bottom: 12px;
+    padding-top: var(--header-padding-top);
+    padding-bottom: var(--header-padding-bottom);
   }
   .app-top-header .brand-logo {
-    height: 48px;
-    max-height: 52px;
-    max-width: 250px;
+    height: var(--header-logo-height);
+    max-height: 56px;
+    max-width: var(--header-logo-max-width);
   }
   .bottom-nav-bar {
     padding-top: 6px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    padding-bottom: var(--bottom-dock-padding-bottom);
     padding-left: 8px;
     padding-right: 8px;
   }
   .bottom-nav-bar .nav-btn {
-    width: 44px;
-    height: 42px;
+    width: var(--bottom-dock-btn-size);
+    height: calc(var(--bottom-dock-btn-size) - 2px);
     font-size: 19px;
   }
   .quick-stats-pill {
@@ -1058,6 +1127,7 @@ html, body {
   .side-drawer {
     width: 100vw;
     height: 100%;
+    height: 100vh;
     height: 100dvh;
     min-height: -webkit-fill-available;
     top: 0;

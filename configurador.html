@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Girocleta - Configurador Visual UI</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Left Control Sidebar */
+    .config-sidebar {
+      width: 380px;
+      min-width: 340px;
+      max-width: 420px;
+      background: #1e293b;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      z-index: 10;
+      box-shadow: 10px 0 30px rgba(0,0,0,0.4);
+    }
+
+    .config-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f172a;
+    }
+
+    .config-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .config-brand img {
+      height: 28px;
+    }
+
+    .config-brand h1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #F9BF3B;
+      letter-spacing: -0.2px;
+    }
+
+    .config-brand span {
+      font-size: 11px;
+      color: #94a3b8;
+      display: block;
+    }
+
+    .btn-reset-all {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-reset-all:hover {
+      background: #ef4444;
+      color: white;
+    }
+
+    .config-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .config-section {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .control-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .control-val {
+      font-family: 'JetBrains Mono', monospace;
+      color: #facc15;
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: #334155;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+      transition: transform 0.1s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .view-toggles {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 8px 10px;
+      background: #334155;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .toggle-btn:hover {
+      background: #475569;
+    }
+    .toggle-btn.active {
+      background: #026838;
+      border-color: #F9BF3B;
+      color: #F9BF3B;
+    }
+
+    .config-footer {
+      padding: 14px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-apply-main {
+      padding: 10px 14px;
+      background: #026838;
+      color: #F9BF3B;
+      border: 1px solid #F9BF3B;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-apply-main:hover {
+      background: #014d28;
+      transform: translateY(-1px);
+    }
+
+    .btn-copy-css {
+      padding: 8px 12px;
+      background: #334155;
+      color: #f8fafc;
+      border: none;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-copy-css:hover {
+      background: #475569;
+    }
+
+    /* Right Preview Container */
+    .preview-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #090d16;
+      position: relative;
+      padding: 20px;
+    }
+
+    .device-toolbar {
+      position: absolute;
+      top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 5;
+    }
+
+    .device-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .device-btn.active, .device-btn:hover {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .device-frame {
+      position: relative;
+      background: #000;
+      border-radius: 46px;
+      border: 10px solid #2d3748;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      transition: width 0.3s ease, height 0.3s ease;
+      width: 390px;
+      height: 844px;
+      max-height: calc(100vh - 80px);
+    }
+
+    /* iPhone Dynamic Island Simulation */
+    .dynamic-island {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 34px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 9999999;
+      pointer-events: none;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    /* iOS Bottom Home Bar Simulation */
+    .home-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 136px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 3px;
+      z-index: 9999999;
+      pointer-events: none;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #026838;
+    }
+
+    @media (max-width: 860px) {
+      body {
+        flex-direction: column;
+      }
+      .config-sidebar {
+        width: 100%;
+        max-width: none;
+        height: 50vh;
+      }
+      .preview-stage {
+        height: 50vh;
+      }
+      .device-frame {
+        height: 100%;
+        width: 100%;
+        max-height: none;
+        border-radius: 0;
+        border: none;
+      }
+      .dynamic-island, .home-indicator {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar Controls -->
+  <aside class="config-sidebar">
+    <div class="config-header">
+      <div class="config-brand">
+        <img src="girocleta-logo.svg" alt="Girocleta">
+        <div>
+          <h1>Configurador UI</h1>
+          <span>Ajust visual en viu</span>
+        </div>
+      </div>
+      <button class="btn-reset-all" id="btn-reset">Restablir</button>
+    </div>
+
+    <div class="config-scroll">
+      <!-- Secció 1: Capçalera Verda Superior -->
+      <section class="config-section">
+        <div class="section-title"><i class="fa-solid fa-heading"></i> Capçalera Superior</div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Alçada Logo</span>
+            <span class="control-val" id="val-logo-h">52px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-logo-h" min="34" max="72" value="52">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Marge Dalt (Padding Top)</span>
+            <span class="control-val" id="val-head-pt">16px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-head-pt" min="8" max="40" value="16">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Marge Baix (Padding Bottom)</span>
+            <span class="control-val" id="val-head-pb">14px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-head-pb" min="6" max="28" value="14">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Arrodoniment Cantons</span>
+            <span class="control-val" id="val-head-rad">24px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-head-rad" min="0" max="40" value="24">
+          </div>
+        </div>
+      </section>
+
+      <!-- Secció 2: Panell Lateral (Drawer) -->
+      <section class="config-section">
+        <div class="section-title"><i class="fa-solid fa-list-ul"></i> Panell Desplegable (Drawer)</div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Marge Dalt (Safe Area Top)</span>
+            <span class="control-val" id="val-draw-pt">56px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-draw-pt" min="20" max="85" value="56">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Marge Baix del Contingut</span>
+            <span class="control-val" id="val-draw-pb">32px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-draw-pb" min="14" max="60" value="32">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Obre / Tanca el panell</span>
+          </div>
+          <div class="view-toggles">
+            <button class="toggle-btn" id="btn-toggle-list">Veure Llistat</button>
+            <button class="toggle-btn" id="btn-toggle-favs">Veure Preferides</button>
+            <button class="toggle-btn" id="btn-close-drawer-preview">Tancar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Secció 3: Dock Inferior (Navegació) -->
+      <section class="config-section">
+        <div class="section-title"><i class="fa-solid fa-mobile-screen"></i> Dock Inferior (Navegació)</div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Mida Botons Icona</span>
+            <span class="control-val" id="val-dock-btn">44px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-dock-btn" min="36" max="54" value="44">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Marge Baix (Home Bar)</span>
+            <span class="control-val" id="val-dock-pb">14px</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-dock-pb" min="6" max="36" value="14">
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="config-footer">
+      <button class="btn-apply-main" id="btn-save-local">
+        <i class="fa-solid fa-floppy-disk"></i> Desar canvis a l'App
+      </button>
+      <button class="btn-copy-css" id="btn-copy">
+        <i class="fa-solid fa-copy"></i> Copiar Valors CSS
+      </button>
+    </div>
+  </aside>
+
+  <!-- Right Visual Stage Preview -->
+  <main class="preview-stage">
+    <div class="device-toolbar">
+      <button class="device-btn active" data-w="390" data-h="844">
+        <i class="fa-solid fa-mobile-screen-button"></i> iPhone 14/15/16 Pro
+      </button>
+      <button class="device-btn" data-w="428" data-h="926">
+        <i class="fa-solid fa-mobile-screen"></i> iPhone Pro Max
+      </button>
+      <button class="device-btn" data-w="768" data-h="1024">
+        <i class="fa-solid fa-tablet-screen-button"></i> iPad
+      </button>
+    </div>
+
+    <div class="device-frame" id="device-frame">
+      <div class="dynamic-island"></div>
+      <iframe src="index.html" id="preview-iframe"></iframe>
+      <div class="home-indicator"></div>
+    </div>
+  </main>
+
+  <script>
+    const iframe = document.getElementById('preview-iframe');
+    const deviceFrame = document.getElementById('device-frame');
+
+    // Default configuration values
+    const DEFAULTS = {
+      logoH: 52,
+      headPt: 16,
+      headPb: 14,
+      headRad: 24,
+      drawPt: 56,
+      drawPb: 32,
+      dockBtn: 44,
+      dockPb: 14
+    };
+
+    let currentConfig = Object.assign({}, DEFAULTS);
+
+    // Load saved config if any
+    try {
+      const saved = localStorage.getItem('girocleta_ui_config');
+      if (saved) {
+        currentConfig = Object.assign({}, DEFAULTS, JSON.parse(saved));
+      }
+    } catch (e) {}
+
+    function updateInputsUI() {
+      document.getElementById('slider-logo-h').value = currentConfig.logoH;
+      document.getElementById('val-logo-h').textContent = currentConfig.logoH + 'px';
+
+      document.getElementById('slider-head-pt').value = currentConfig.headPt;
+      document.getElementById('val-head-pt').textContent = currentConfig.headPt + 'px';
+
+      document.getElementById('slider-head-pb').value = currentConfig.headPb;
+      document.getElementById('val-head-pb').textContent = currentConfig.headPb + 'px';
+
+      document.getElementById('slider-head-rad').value = currentConfig.headRad;
+      document.getElementById('val-head-rad').textContent = currentConfig.headRad + 'px';
+
+      document.getElementById('slider-draw-pt').value = currentConfig.drawPt;
+      document.getElementById('val-draw-pt').textContent = currentConfig.drawPt + 'px';
+
+      document.getElementById('slider-draw-pb').value = currentConfig.drawPb;
+      document.getElementById('val-draw-pb').textContent = currentConfig.drawPb + 'px';
+
+      document.getElementById('slider-dock-btn').value = currentConfig.dockBtn;
+      document.getElementById('val-dock-btn').textContent = currentConfig.dockBtn + 'px';
+
+      document.getElementById('slider-dock-pb').value = currentConfig.dockPb;
+      document.getElementById('val-dock-pb').textContent = currentConfig.dockPb + 'px';
+    }
+
+    function applyConfigToIframe() {
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        if (!doc) return;
+
+        const root = doc.documentElement;
+        root.style.setProperty('--header-logo-height', `${currentConfig.logoH}px`);
+        root.style.setProperty('--header-padding-top', `max(${currentConfig.headPt}px, env(safe-area-inset-top, ${currentConfig.headPt}px))`);
+        root.style.setProperty('--header-padding-bottom', `${currentConfig.headPb}px`);
+        root.style.setProperty('--header-radius', `${currentConfig.headRad}px`);
+
+        root.style.setProperty('--drawer-header-padding-top', `max(${currentConfig.drawPt}px, calc(env(safe-area-inset-top, 24px) + ${currentConfig.drawPt - 24}px))`);
+        root.style.setProperty('--drawer-content-padding-bottom', `max(${currentConfig.drawPb}px, env(safe-area-inset-bottom, ${currentConfig.drawPb}px))`);
+
+        root.style.setProperty('--bottom-dock-btn-size', `${currentConfig.dockBtn}px`);
+        root.style.setProperty('--bottom-dock-padding-bottom', `max(${currentConfig.dockPb}px, env(safe-area-inset-bottom, ${currentConfig.dockPb}px))`);
+      } catch (e) {
+        console.warn('Iframe not ready yet');
+      }
+    }
+
+    iframe.addEventListener('load', () => {
+      applyConfigToIframe();
+    });
+
+    // Wire sliders
+    function setupSlider(sliderId, valId, propKey) {
+      const slider = document.getElementById(sliderId);
+      const valLabel = document.getElementById(valId);
+      slider.addEventListener('input', (e) => {
+        const v = parseInt(e.target.value, 10);
+        valLabel.textContent = v + 'px';
+        currentConfig[propKey] = v;
+        applyConfigToIframe();
+      });
+    }
+
+    setupSlider('slider-logo-h', 'val-logo-h', 'logoH');
+    setupSlider('slider-head-pt', 'val-head-pt', 'headPt');
+    setupSlider('slider-head-pb', 'val-head-pb', 'headPb');
+    setupSlider('slider-head-rad', 'val-head-rad', 'headRad');
+    setupSlider('slider-draw-pt', 'val-draw-pt', 'drawPt');
+    setupSlider('slider-draw-pb', 'val-draw-pb', 'drawPb');
+    setupSlider('slider-dock-btn', 'val-dock-btn', 'dockBtn');
+    setupSlider('slider-dock-pb', 'val-dock-pb', 'dockPb');
+
+    // Drawer Toggles
+    document.getElementById('btn-toggle-list').addEventListener('click', () => {
+      try {
+        iframe.contentWindow.document.getElementById('btn-nav-list')?.click();
+      } catch (e) {}
+    });
+
+    document.getElementById('btn-toggle-favs').addEventListener('click', () => {
+      try {
+        iframe.contentWindow.document.getElementById('btn-nav-favorites')?.click();
+      } catch (e) {}
+    });
+
+    document.getElementById('btn-close-drawer-preview').addEventListener('click', () => {
+      try {
+        iframe.contentWindow.document.getElementById('btn-close-drawer')?.click();
+      } catch (e) {}
+    });
+
+    // Device switchers
+    document.querySelectorAll('.device-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const w = btn.getAttribute('data-w');
+        const h = btn.getAttribute('data-h');
+        deviceFrame.style.width = w + 'px';
+        deviceFrame.style.height = h + 'px';
+      });
+    });
+
+    // Reset button
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      currentConfig = Object.assign({}, DEFAULTS);
+      updateInputsUI();
+      applyConfigToIframe();
+      localStorage.removeItem('girocleta_ui_config');
+    });
+
+    // Save locally
+    document.getElementById('btn-save-local').addEventListener('click', () => {
+      localStorage.setItem('girocleta_ui_config', JSON.stringify(currentConfig));
+      alert('Configuració desada!');
+    });
+
+    // Copy CSS
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      const css = `:root {
+  --header-logo-height: ${currentConfig.logoH}px;
+  --header-padding-top: max(${currentConfig.headPt}px, env(safe-area-inset-top, ${currentConfig.headPt}px));
+  --header-padding-bottom: ${currentConfig.headPb}px;
+  --header-radius: ${currentConfig.headRad}px;
+  --drawer-header-padding-top: max(${currentConfig.drawPt}px, calc(env(safe-area-inset-top, 24px) + ${currentConfig.drawPt - 24}px));
+  --drawer-content-padding-bottom: max(${currentConfig.drawPb}px, env(safe-area-inset-bottom, ${currentConfig.drawPb}px));
+  --bottom-dock-btn-size: ${currentConfig.dockBtn}px;
+  --bottom-dock-padding-bottom: max(${currentConfig.dockPb}px, env(safe-area-inset-bottom, ${currentConfig.dockPb}px));
+}`;
+      navigator.clipboard.writeText(css).then(() => {
+        alert('Variables CSS copiades al porta-retalls!');
+      });
+    });
+
+    updateInputsUI();
+  </script>
+</body>
+</html>

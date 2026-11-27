@@ -156,6 +156,23 @@ const state = {
 // Initialization
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Apply saved UI custom configuration if available
+  try {
+    const customConfig = localStorage.getItem('girocleta_ui_config');
+    if (customConfig) {
+      const cfg = JSON.parse(customConfig);
+      const root = document.documentElement;
+      if (cfg.logoH) root.style.setProperty('--header-logo-height', `${cfg.logoH}px`);
+      if (cfg.headPt) root.style.setProperty('--header-padding-top', `max(${cfg.headPt}px, env(safe-area-inset-top, ${cfg.headPt}px))`);
+      if (cfg.headPb) root.style.setProperty('--header-padding-bottom', `${cfg.headPb}px`);
+      if (cfg.headRad !== undefined) root.style.setProperty('--header-radius', `${cfg.headRad}px`);
+      if (cfg.drawPt) root.style.setProperty('--drawer-header-padding-top', `max(${cfg.drawPt}px, calc(env(safe-area-inset-top, 24px) + ${cfg.drawPt - 24}px))`);
+      if (cfg.drawPb) root.style.setProperty('--drawer-content-padding-bottom', `max(${cfg.drawPb}px, env(safe-area-inset-bottom, ${cfg.drawPb}px))`);
+      if (cfg.dockBtn) root.style.setProperty('--bottom-dock-btn-size', `${cfg.dockBtn}px`);
+      if (cfg.dockPb) root.style.setProperty('--bottom-dock-padding-bottom', `max(${cfg.dockPb}px, env(safe-area-inset-bottom, ${cfg.dockPb}px))`);
+    }
+  } catch (e) {}
+
   // Remove animated splash screen after 1.5s
   setTimeout(() => {
     const splash = document.getElementById('splash-screen');
@@ -721,9 +738,8 @@ function closeDrawer() {
   overlay.classList.remove('active');
   drawer.setAttribute('aria-hidden', 'true');
 
-  // De-activate list / favorites buttons if closing
-  document.querySelectorAll('.action-nav .nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-nav-home').classList.add('active');
+  // De-activate list / favorites buttons and revert to Home as active
+  setActiveNavBtn('btn-nav-home');
 }
 
 function isDrawerOpen() {
@@ -968,13 +984,12 @@ function bindUIEvents() {
     findNearbyStations();
   });
 
-  // 5. Alerts & Preferences Button
-  document.getElementById('btn-nav-alerts')?.addEventListener('click', () => {
-    setActiveNavBtn('btn-nav-alerts');
+  // Top Right Alerts Button
+  document.getElementById('btn-header-alerts')?.addEventListener('click', () => {
     openPreferencesModal();
   });
 
-  // 6. Map Layers Switcher Button
+  // 5. Map Layers Switcher Button
   document.getElementById('btn-nav-layers')?.addEventListener('click', () => {
     setActiveNavBtn('btn-nav-layers');
     openLayersModal();
@@ -1046,8 +1061,10 @@ function bindUIEvents() {
 }
 
 function setActiveNavBtn(btnId) {
-  document.querySelectorAll('.action-nav .nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(btnId)?.classList.add('active');
+  document.querySelectorAll('#bottom-nav-bar .nav-btn').forEach(b => b.classList.remove('active'));
+  if (btnId) {
+    document.getElementById(btnId)?.classList.add('active');
+  }
 }
 
 function goHome() {
@@ -1455,7 +1472,7 @@ function closePreferencesModal() {
   if (!overlay) return;
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
-  if (document.getElementById('btn-nav-alerts')?.classList.contains('active')) {
+  if (!isDrawerOpen()) {
     setActiveNavBtn('btn-nav-home');
   }
 }

@@ -1,8 +1,9 @@
 // Girocleta Service Worker for PWA, Offline Support & Push Notifications
-const CACHE_NAME = 'girocleta-v24';
+const CACHE_NAME = 'girocleta-v25';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './configurador.html',
   './style.css',
   './app.js',
   './leaflet-rotate.js',

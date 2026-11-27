@@ -43,7 +43,7 @@
   <!-- Custom CSS -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#026838">
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 
@@ -128,8 +128,16 @@
 
   <!-- Top Header Banner (SMOU style: extends from top edge to past the large centered logo) -->
   <header class="app-top-header" id="app-top-header">
+    <div class="top-header-side left"></div>
     <div class="brand-container" id="btn-brand-home" title="Girocleta Girona - Clica per actualitzar">
       <img src="girocleta-logo.svg" alt="Girocleta" class="brand-logo" id="header-brand-logo" />
+    </div>
+    <div class="top-header-side right">
+      <!-- Botó Campaneta d'Alertes i Notificacions a dalt a la dreta -->
+      <button id="btn-header-alerts" class="btn-header-bell" title="Alertes i notificacions" aria-label="Alertes i notificacions">
+        <i class="fa-solid fa-bell"></i>
+        <span class="badge" id="alert-active-badge" style="display:none;"><i class="fa-solid fa-check" style="font-size:8px;"></i></span>
+      </button>
     </div>
   </header>
 
@@ -156,13 +164,7 @@
       <i class="fa-solid fa-location-crosshairs"></i>
     </button>
 
-    <!-- 5. Alertes & Notificacions -->
-    <button id="btn-nav-alerts" class="nav-btn" title="Alertes i notificacions" aria-label="Alertes">
-      <i class="fa-solid fa-bell"></i>
-      <span class="badge" id="alert-active-badge" style="display:none; background:#F9BF3B; color:#026838;"><i class="fa-solid fa-check" style="font-size:8px;"></i></span>
-    </button>
-
-    <!-- 6. Selector d'Estil de Mapa -->
+    <!-- 5. Selector d'Estil de Mapa -->
     <button id="btn-nav-layers" class="nav-btn" title="Estil visual del mapa" aria-label="Estil de mapa">
       <i class="fa-solid fa-palette"></i>
     </button>
@@ -432,6 +434,6 @@
   <!-- Leaflet Rotate Plugin (Suport rotació lliure del mapa) -->
   <script src="leaflet-rotate.js"></script>
   <!-- Application JS -->
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>
