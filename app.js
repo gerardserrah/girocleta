@@ -659,40 +659,129 @@ function isDrawerOpen() {
   return document.getElementById('side-drawer').classList.contains('open');
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function renderStationCardHtml(station) {
+  const isFav = state.favorites.has(station.id);
+  const distText = station.distanceMeters ? formatDistance(station.distanceMeters) : '';
+
+  return `
+    <div class="station-card" onclick="flyToStation(${station.id})">
+      <div class="station-card-top">
+        <div class="station-card-info">
+          <span class="station-card-code">Estació ${station.code}</span>
+          <h4 class="station-card-name">${escapeHtml(station.name)}</h4>
+          <div class="station-card-addr"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(station.address)}</div>
+          ${distText ? `<div class="station-card-distance"><i class="fa-solid fa-person-walking"></i> ${distText}</div>` : ''}
+        </div>
+        <button class="station-card-fav-btn ${isFav ? 'is-favorite' : ''}" 
+                onclick="event.stopPropagation(); toggleFavorite(${station.id})"
+                title="${isFav ? 'Treure de preferides' : 'Afegir a preferides'}">
+          <i class="fa-${isFav ? 'solid' : 'regular'} fa-star"></i>
+        </button>
+      </div>
+
+      <div class="station-card-bottom">
+        <div class="station-chips">
+          <span class="station-chip bikes"><i class="fa-solid fa-bicycle"></i> ${station.bikes} bicis</span>
+          <span class="station-chip slots"><i class="fa-solid fa-square-parking"></i> ${station.slots} lliures</span>
+        </div>
+        <span class="btn-locate-card">
+          Veure al mapa <i class="fa-solid fa-chevron-right"></i>
+        </span>
+      </div>
+    </div>
+  `;
+}
+
 function renderStationsList() {
   const listContainer = document.getElementById('stations-list');
   if (!listContainer) return;
 
-  // Filter stations
+  const query = state.searchQuery.trim().toLowerCase();
+
+  // SPECIAL HANDLING FOR "FAVS" TAB:
+  // If user is searching on the Favorites tab, search across ALL stations so they can easily find and add new favorites!
+  if (state.activeFilter === 'favs') {
+    if (query) {
+      const allMatching = state.stations.filter(s => 
+        s.name.toLowerCase().includes(query) ||
+        (s.address && s.address.toLowerCase().includes(query)) ||
+        (s.code && String(s.code).includes(query))
+      );
+
+      const favMatches = allMatching.filter(s => state.favorites.has(s.id));
+      const otherMatches = allMatching.filter(s => !state.favorites.has(s.id));
+
+      if (favMatches.length === 0 && otherMatches.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-folder-open"></i>
+            <p>Cap estació coincideix amb "<strong>${escapeHtml(state.searchQuery)}</strong>".</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      if (favMatches.length > 0) {
+        html += `<div class="station-search-subhead"><i class="fa-solid fa-star" style="color:var(--accent-yellow);"></i> Les teves preferides (${favMatches.length})</div>`;
+        html += favMatches.map(renderStationCardHtml).join('');
+      }
+      if (otherMatches.length > 0) {
+        html += `<div class="station-search-subhead"><i class="fa-solid fa-plus-circle"></i> Altres estacions trobades (fes clic a ⭐ per afegir):</div>`;
+        html += otherMatches.map(renderStationCardHtml).join('');
+      }
+      listContainer.innerHTML = html;
+      return;
+    } else {
+      // No search query: show existing favorites
+      const favs = state.stations.filter(s => state.favorites.has(s.id));
+      if (favs.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state empty-favs-state">
+            <div class="empty-fav-icon-wrap"><i class="fa-solid fa-star" style="color:var(--accent-yellow); font-size:32px;"></i></div>
+            <h3>Encara no tens cap estació preferida</h3>
+            <p>Escriu el nom de qualsevol parada al cercador d'aquí dalt (ex: <em>"Biblioteca"</em> o <em>"Renfe"</em>) i fes clic a l'estrella ⭐ per desar-la com a preferida.</p>
+          </div>
+        `;
+        return;
+      }
+      listContainer.innerHTML = favs.map(renderStationCardHtml).join('');
+      return;
+    }
+  }
+
+  // OTHER TABS (all, has-bikes, has-slots):
   let filtered = [...state.stations];
 
-  // 1. Text Search Filter
-  if (state.searchQuery.trim()) {
-    const q = state.searchQuery.toLowerCase().trim();
+  if (query) {
     filtered = filtered.filter(s => 
-      s.name.toLowerCase().includes(q) ||
-      s.address.toLowerCase().includes(q) ||
-      s.code.includes(q)
+      s.name.toLowerCase().includes(query) ||
+      (s.address && s.address.toLowerCase().includes(query)) ||
+      (s.code && String(s.code).includes(query))
     );
   }
 
-  // 2. Tab Filter
   if (state.activeFilter === 'has-bikes') {
     filtered = filtered.filter(s => s.bikes > 0);
   } else if (state.activeFilter === 'has-slots') {
     filtered = filtered.filter(s => s.slots > 0);
-  } else if (state.activeFilter === 'favs') {
-    filtered = filtered.filter(s => state.favorites.has(s.id));
   }
 
-  // 3. Sorting
   if (state.drawerMode === 'nearby' && state.userLocation) {
     filtered.sort((a, b) => (a.distanceMeters || 999999) - (b.distanceMeters || 999999));
   } else {
     filtered.sort((a, b) => a.id - b.id);
   }
 
-  // Render HTML
   if (filtered.length === 0) {
     listContainer.innerHTML = `
       <div class="empty-state">
@@ -703,38 +792,7 @@ function renderStationsList() {
     return;
   }
 
-  listContainer.innerHTML = filtered.map(station => {
-    const isFav = state.favorites.has(station.id);
-    const distText = station.distanceMeters ? formatDistance(station.distanceMeters) : '';
-
-    return `
-      <div class="station-card" onclick="flyToStation(${station.id})">
-        <div class="station-card-top">
-          <div class="station-card-info">
-            <span class="station-card-code">Estació ${station.code}</span>
-            <h4 class="station-card-name">${station.name}</h4>
-            <div class="station-card-addr"><i class="fa-solid fa-location-dot"></i> ${station.address}</div>
-            ${distText ? `<div class="station-card-distance"><i class="fa-solid fa-person-walking"></i> ${distText}</div>` : ''}
-          </div>
-          <button class="station-card-fav-btn ${isFav ? 'is-favorite' : ''}" 
-                  onclick="event.stopPropagation(); toggleFavorite(${station.id})"
-                  title="${isFav ? 'Treure de preferides' : 'Afegir a preferides'}">
-            <i class="fa-${isFav ? 'solid' : 'regular'} fa-star"></i>
-          </button>
-        </div>
-
-        <div class="station-card-bottom">
-          <div class="station-chips">
-            <span class="station-chip bikes"><i class="fa-solid fa-bicycle"></i> ${station.bikes} bicis</span>
-            <span class="station-chip slots"><i class="fa-solid fa-square-parking"></i> ${station.slots} lliures</span>
-          </div>
-          <span class="btn-locate-card">
-            Veure al mapa <i class="fa-solid fa-chevron-right"></i>
-          </span>
-        </div>
-      </div>
-    `;
-  }).join('');
+  listContainer.innerHTML = filtered.map(renderStationCardHtml).join('');
 }
 
 function flyToStation(stationId) {
@@ -792,7 +850,7 @@ function bindUIEvents() {
   document.getElementById('btn-nav-favorites')?.addEventListener('click', () => {
     setActiveNavBtn('btn-nav-favorites');
     if (state.favorites.size === 0) {
-      showToast('Encara no tens preferides. Fes clic a l\'estrella d\'una estació!');
+      showToast('Cerca qualsevol parada pel nom i fes clic a ⭐ per desar-la!');
     }
     state.drawerMode = 'favorites';
     state.activeFilter = 'favs';
@@ -802,8 +860,17 @@ function bindUIEvents() {
       t.classList.toggle('active', t.getAttribute('data-filter') === 'favs');
     });
 
-    openDrawer('<i class="fa-solid fa-star" style="color:#f59e0b"></i> Estacions preferides', `${state.favorites.size} estacions guardades`);
+    openDrawer('<i class="fa-solid fa-star" style="color:var(--accent-yellow)"></i> Estacions preferides', `${state.favorites.size} estacions guardades`);
     renderStationsList();
+
+    // Auto-focus search input so user can start typing station name immediately
+    setTimeout(() => {
+      const sInput = document.getElementById('station-search');
+      if (sInput) {
+        sInput.placeholder = "Escriu el nom per cercar o afegir a preferides...";
+        sInput.focus();
+      }
+    }, 150);
   });
 
   // 3. List Button
@@ -887,6 +954,14 @@ function bindUIEvents() {
       document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       state.activeFilter = tab.getAttribute('data-filter');
+      const sInput = document.getElementById('station-search');
+      if (sInput) {
+        if (state.activeFilter === 'favs') {
+          sInput.placeholder = "Escriu el nom per cercar o afegir a preferides...";
+        } else {
+          sInput.placeholder = "Cercar per nom, carrer o número...";
+        }
+      }
       renderStationsList();
     });
   });
@@ -1439,10 +1514,16 @@ function renderSchedulesList() {
       </div>
 
       <div class="sched-add-station-dropdown-wrap">
-        <select class="sched-select-station">
-          <option value="">+ Afegir una estació a les ${sched.time}...</option>
-          ${optionsHtml}
-        </select>
+        <div class="sched-search-station-container">
+          <div class="sched-search-input-box">
+            <i class="fa-solid fa-magnifying-glass sched-search-icon"></i>
+            <input type="text" class="sched-search-station-input" placeholder="🔍 Escriu per cercar estació (o tria de la llista)..." autocomplete="off">
+            <button type="button" class="btn-toggle-sched-dropdown" title="Veure totes les estacions">
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="sched-search-suggestions" style="display:none;"></div>
+        </div>
       </div>
     `;
 
@@ -1502,20 +1583,107 @@ function renderSchedulesList() {
       });
     });
 
-    // 6. Select station from dropdown
-    const select = card.querySelector('.sched-select-station');
-    select.addEventListener('change', (e) => {
-      const val = e.target.value;
-      if (!val) return;
-      const stId = Number(val);
-      if (!Array.isArray(sched.stationIds)) sched.stationIds = [];
-      if (!sched.stationIds.includes(stId)) {
-        sched.stationIds.push(stId);
-        savePreferences(false);
-        renderSchedulesList();
-        updateNotificationPreview();
-      }
+    // 6. Setup searchable autocomplete for adding stations
+    setupSchedStationSearch(card, sched, availableStations);
+
+    container.appendChild(card);
+  });
+}
+
+function setupSchedStationSearch(card, sched, availableStations) {
+  const container = card.querySelector('.sched-search-station-container');
+  const input = card.querySelector('.sched-search-station-input');
+  const toggleBtn = card.querySelector('.btn-toggle-sched-dropdown');
+  const suggestionsBox = card.querySelector('.sched-search-suggestions');
+  if (!container || !input || !suggestionsBox) return;
+
+  function renderSuggestions(query = '') {
+    const q = query.trim().toLowerCase();
+    const currentSelected = new Set((sched.stationIds || []).map(Number));
+    let unselected = availableStations.filter(s => !currentSelected.has(Number(s.id)));
+
+    if (q) {
+      unselected = unselected.filter(s => 
+        s.name.toLowerCase().includes(q) ||
+        (s.address && s.address.toLowerCase().includes(q)) ||
+        (s.code && String(s.code).includes(q)) ||
+        String(s.id).includes(q)
+      );
+    }
+
+    // Sort: favorites first, then by code/id
+    unselected.sort((a, b) => {
+      const aFav = state.favorites.has(a.id) ? 1 : 0;
+      const bFav = state.favorites.has(b.id) ? 1 : 0;
+      if (bFav !== aFav) return bFav - aFav;
+      return (parseInt(a.code || a.id, 10) || 0) - (parseInt(b.code || b.id, 10) || 0);
     });
+
+    if (unselected.length === 0) {
+      suggestionsBox.innerHTML = `<div class="sched-no-sugg">No s'ha trobat cap estació disponible amb "${escapeHtml(query)}"</div>`;
+    } else {
+      suggestionsBox.innerHTML = unselected.map(s => {
+        const isFav = state.favorites.has(s.id);
+        return `
+          <div class="sched-suggestion-item" data-station-id="${s.id}">
+            <div class="sched-sugg-left">
+              <span class="sched-sugg-code">#${s.code || s.id}</span>
+              <span class="sched-sugg-name">${escapeHtml(s.name)}</span>
+              ${isFav ? '<i class="fa-solid fa-star sched-sugg-fav-star" title="Estació preferida"></i>' : ''}
+            </div>
+            <div class="sched-sugg-right">
+              <span><i class="fa-solid fa-bicycle"></i> ${s.bikes}</span>
+              <span><i class="fa-solid fa-square-parking"></i> ${s.slots}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    suggestionsBox.style.display = 'block';
+
+    // Click on suggestion
+    suggestionsBox.querySelectorAll('.sched-suggestion-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const stId = Number(item.getAttribute('data-station-id'));
+        if (!Array.isArray(sched.stationIds)) sched.stationIds = [];
+        if (!sched.stationIds.includes(stId)) {
+          sched.stationIds.push(stId);
+          savePreferences(false);
+          renderSchedulesList();
+          updateNotificationPreview();
+          showToast(`Estació afegida a l'horari de les ${sched.time}`);
+        }
+      });
+    });
+  }
+
+  input.addEventListener('input', (e) => {
+    renderSuggestions(e.target.value);
+  });
+
+  input.addEventListener('focus', () => {
+    renderSuggestions(input.value);
+  });
+
+  toggleBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (suggestionsBox.style.display === 'block') {
+      suggestionsBox.style.display = 'none';
+    } else {
+      renderSuggestions(input.value);
+      input.focus();
+    }
+  });
+
+  // Close suggestions when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!container.contains(e.target)) {
+      suggestionsBox.style.display = 'none';
+    }
+  });
+}
 
     container.appendChild(card);
   });
