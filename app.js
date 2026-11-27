@@ -1109,6 +1109,9 @@ function savePreferences(notifyUser = true) {
     console.error('Error saving preferences', e);
   }
   updateAlertBadge();
+  if (state.preferences && state.preferences.notificationsEnabled) {
+    syncSubscriptionWithBackend();
+  }
   if (notifyUser) {
     showToast('Preferències d\'alertes desades correctament!');
   }
@@ -1121,12 +1124,90 @@ function updateAlertBadge() {
   }
 }
 
+// ==========================================================================
+// Web Push Subscription & Backend Sync (VAPID / Server Push)
+// ==========================================================================
+const VAPID_FALLBACK_PUBLIC_KEY = 'BPqnGwoSmado1uPz-Ws-2jc2KvjYEbzIJ3fvyE76YrTzPQ3leE37sFoQQuI3PhqvoXe89ycyTsLWQ8iQDzcBiPA';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function registerWebPushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return null;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+
+    if (!sub) {
+      let vapidPub = VAPID_FALLBACK_PUBLIC_KEY;
+      try {
+        const r = await fetch('/api/vapid-public-key');
+        if (r.ok) {
+          const d = await r.json();
+          if (d.publicKey) vapidPub = d.publicKey;
+        }
+      } catch (e) {}
+
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPub)
+      });
+    }
+
+    state.pushSubscription = sub;
+    await syncSubscriptionWithBackend(sub);
+    return sub;
+  } catch (err) {
+    console.warn('PushManager error:', err);
+    return null;
+  }
+}
+
+async function syncSubscriptionWithBackend(subscription = null) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = subscription || (reg.pushManager ? await reg.pushManager.getSubscription() : null);
+    if (!sub) return;
+
+    state.pushSubscription = sub;
+
+    await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: sub,
+        preferences: state.preferences,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid'
+      })
+    });
+    console.log('Subscripció Push sincronitzada amb el servidor!');
+  } catch (e) {
+    console.warn('No s\'ha pogut sincronitzar amb el backend:', e);
+  }
+}
+
 function initServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then((reg) => {
       state.swRegistration = reg;
       console.log('Girocleta Service Worker actiu');
       if (reg.update) reg.update();
+
+      // If user had already enabled notifications, ensure server subscription is fresh
+      if (state.preferences && state.preferences.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+        registerWebPushSubscription();
+      }
     }).catch((err) => {
       console.warn('Girocleta SW warning:', err);
     });
@@ -1254,7 +1335,7 @@ function requestNotificationPermission() {
     showToast('Aquest navegador no admet la Notification API.');
     return;
   }
-  Notification.requestPermission().then((permission) => {
+  Notification.requestPermission().then(async (permission) => {
     updatePermissionBanner();
     if (permission === 'granted') {
       showToast('Permís de notificacions concedit!');
@@ -1263,6 +1344,7 @@ function requestNotificationPermission() {
         toggle.checked = true;
         toggle.dispatchEvent(new Event('change'));
       }
+      await registerWebPushSubscription();
     } else if (permission === 'denied') {
       showToast('Permís de notificacions denegat.');
     }
@@ -1585,7 +1667,7 @@ function sendTestNotification() {
   }
 }
 
-function executeTestNotification() {
+async function executeTestNotification() {
   const prefs = state.preferences;
   let targetStation = null;
 
@@ -1607,7 +1689,29 @@ function executeTestNotification() {
     targetStation = state.stations[0] || { id: 3, code: '03', name: 'Plaça de Catalunya', bikes: 14, slots: 12 };
   }
 
-  dispatchStationPushNotification(targetStation, true);
+  showToast('Enviant notificació de prova...');
+
+  let serverSent = false;
+  try {
+    const sub = await registerWebPushSubscription();
+    if (sub) {
+      const res = await fetch('/api/send-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub, stationId: targetStation.id })
+      });
+      if (res.ok) {
+        serverSent = true;
+        showToast(`Notificació de servidor enviada: ${targetStation.name}`);
+      }
+    }
+  } catch (err) {
+    console.warn('Server test push error:', err);
+  }
+
+  if (!serverSent) {
+    dispatchStationPushNotification(targetStation, true);
+  }
 }
 
 // Dispatch Station Notification with live bikes & slots

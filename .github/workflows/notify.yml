@@ -1,0 +1,17 @@
+name: Girocleta Scheduled Notifications Cron
+
+on:
+  schedule:
+    # Runs every 15 minutes between 06:00 and 21:45 UTC (07:00 to 22:45 CET) Monday to Friday
+    - cron: '*/15 5-20 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  ping-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Girocleta Push Check
+        run: |
+          echo "Triggering Girocleta Web Push Cron..."
+          curl -s -f -X POST https://girocleta.gerard.sh/api/cron \
+            -H "Content-Type: application/json" || true

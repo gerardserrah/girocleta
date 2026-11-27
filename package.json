@@ -1,0 +1,11 @@
+{
+  "name": "girocleta",
+  "version": "1.0.0",
+  "description": "Girocleta Girona PWA - Disponibilitat en temps real i notificacions push de servidor",
+  "scripts": {
+    "start": "python3 -m http.server 8089"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

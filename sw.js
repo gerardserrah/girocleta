@@ -1,5 +1,5 @@
 // Girocleta Service Worker for PWA, Offline Support & Push Notifications
-const CACHE_NAME = 'girocleta-v10';
+const CACHE_NAME = 'girocleta-v11';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -59,6 +59,31 @@ self.addEventListener('fetch', (event) => {
       return response;
     }).catch(() => caches.match(event.request))
   );
+});
+
+// Push Event: Received from Apple APNs / Google FCM when device is in background/locked
+self.addEventListener('push', (event) => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: 'Girocleta', body: event.data.text() };
+    }
+  }
+
+  const title = data.title || 'Girocleta';
+  const options = {
+    body: data.body || 'Informació de bicis disponible',
+    icon: 'girocleta_logo.png',
+    badge: 'girocleta-logo.svg',
+    data: data.data || {},
+    tag: data.tag || 'girocleta-server-alert',
+    renotify: true,
+    vibrate: [200, 100, 200]
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 // Notification Click Event: Focus existing window or open app
