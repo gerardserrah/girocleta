@@ -1398,7 +1398,14 @@ function initServiceWorker() {
       console.log('Girocleta Service Worker actiu');
       if (reg.update) reg.update();
 
-      // If user had already enabled notifications, ensure server subscription is fresh
+      // Automatically refresh when a new service worker version activates
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
       if (state.preferences && state.preferences.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
         registerWebPushSubscription();
       }
