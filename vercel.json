@@ -4,5 +4,11 @@
       "path": "/api/cron",
       "schedule": "0 7 * * 1-5"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/tiles/:style/:z/:x/:y.png",
+      "destination": "/api/tile?style=:style&z=:z&x=:x&y=:y"
+    }
   ]
 }

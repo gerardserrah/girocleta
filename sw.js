@@ -1,5 +1,5 @@
 // Girocleta Service Worker for PWA, Offline Support & Push Notifications
-const CACHE_NAME = 'girocleta-v31';
+const CACHE_NAME = 'girocleta-v32';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -48,8 +48,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Live API for external CityBik data
-  if (url.hostname.includes('citybik.es')) {
+  // Live API for external CityBik data & dynamic tile proxy (never cache stale tiles in SW)
+  if (url.hostname.includes('citybik.es') || url.pathname.startsWith('/api/') || url.pathname.startsWith('/tiles/')) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match('./stations.json'))
     );

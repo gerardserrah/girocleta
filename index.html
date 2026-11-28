@@ -43,7 +43,7 @@
   <!-- Custom CSS -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#026838">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
 
@@ -162,11 +162,6 @@
     <!-- 4. Estacions Més Properes / Ubicació -->
     <button id="btn-nav-nearby" class="nav-btn" title="Estacions més a prop" aria-label="Més properes">
       <i class="fa-solid fa-location-crosshairs"></i>
-    </button>
-
-    <!-- 5. Selector d'Estil de Mapa -->
-    <button id="btn-nav-layers" class="nav-btn" title="Estil visual del mapa" aria-label="Estil de mapa">
-      <i class="fa-solid fa-palette"></i>
     </button>
   </nav>
 
@@ -350,27 +345,6 @@
     </div>
   </div>
 
-  <!-- Modal Selector Visual d'Estil de Mapa -->
-  <div class="modal-overlay" id="modal-layers-overlay" aria-hidden="true">
-    <div class="modal-card modal-card-layers" id="modal-layers-card" role="dialog" aria-labelledby="modal-layers-title">
-      <div class="modal-header">
-        <div class="modal-title-group">
-          <h2 id="modal-layers-title"><i class="fa-solid fa-palette" style="color:var(--primary-green);"></i> Estil del Mapa</h2>
-          <span class="modal-subtitle">Tria l'estil visual que prefereixis per al mapa de Girona</span>
-        </div>
-        <button class="btn-close-modal" id="btn-close-layers" aria-label="Tancar">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="map-layers-grid" id="map-layers-grid">
-          <!-- Rendered dynamically -->
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal Guia Notificacions iOS / iPhone Safari -->
   <div class="modal-overlay" id="modal-ios-guide-overlay" aria-hidden="true">
     <div class="modal-card modal-card-ios" id="modal-ios-card" role="dialog" aria-labelledby="ios-guide-title">
@@ -434,6 +408,6 @@
   <!-- Leaflet Rotate Plugin (Suport rotació lliure del mapa) -->
   <script src="leaflet-rotate.js"></script>
   <!-- Application JS -->
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=32"></script>
 </body>
 </html>

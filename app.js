@@ -15,130 +15,20 @@ const CONFIG = {
   mapLayerStorageKey: 'girocleta_map_layer'
 };
 
-// Available Base Map Layers: 100% free, high reliability, zero API key required, pure native Leaflet
-const MAP_LAYERS = {
-  positron: {
-    id: 'positron',
-    name: 'Positron (Minimalista)',
-    desc: 'L\'estil Positron net, clar i minimalista. Ressalta al màxim els marcadors de la Girocleta amb màxima fluïdesa i estabilitat.',
-    badge: 'Per Defecte',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-      maxZoom: 19
-    },
-    tileClass: 'filter-positron',
-    previewClass: 'preview-positron'
-  },
-  cyclosm: {
-    id: 'cyclosm',
-    name: 'CyclOSM (Bicicletes & Carrils)',
-    desc: 'Creat especialment per a ciclistes: destaca clarament els carrils bici de Girona, vies verdes i carrers 30.',
-    badge: 'Ciclisme',
-    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
-    options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> | <a href="https://www.cyclosm.org" target="_blank" rel="noopener">CyclOSM</a>',
-      subdomains: 'abc',
-      maxZoom: 19
-    },
-    previewClass: 'preview-cyclosm'
-  },
-  osm: {
-    id: 'osm',
-    name: 'OpenStreetMap Clàssic',
-    desc: 'El mapa cartogràfic de referència mundial amb tot el detall de carrers, noms i places de Girona.',
-    badge: 'Clàssic',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-      maxZoom: 19
-    },
-    previewClass: 'preview-osm'
-  },
-  osm_hot: {
-    id: 'osm_hot',
-    name: 'OSM Suau (Colors Pastel)',
-    desc: 'Estil suau d\'alta llegibilitat que fa que les estacions de la Girocleta contrastin a la perfecció.',
-    badge: 'Clar & Suau',
-    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-    options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> | Humanitarian OSM',
-      subdomains: 'abc',
-      maxZoom: 19
-    },
-    previewClass: 'preview-osm-hot'
-  },
-  esri_streets: {
-    id: 'esri_streets',
-    name: 'Esri Carrers Urbans',
-    desc: 'Cartografia viària neta i moderna d\'Esri amb edificis i vials d\'alta resolució.',
-    badge: 'Urbà',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ',
-      maxZoom: 19
-    },
-    previewClass: 'preview-esri-streets'
-  },
-  esri_dark: {
-    id: 'esri_dark',
-    name: 'Esri Mode Fosc',
-    desc: 'Mode fosc d\'alt contrast per a la nit: les estacions verdes de Girocleta destaquen al màxim.',
-    badge: 'Mode Fosc',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-      maxZoom: 16
-    },
-    previewClass: 'preview-esri-dark'
-  },
-  esri_satellite: {
-    id: 'esri_satellite',
-    name: 'Esri Satèl·lit (Fotografia Aèria)',
-    desc: 'Ortofoto real en alta resolució per veure carrers, el riu Onyar i els parcs de Girona des de l\'espai.',
-    badge: 'Satèl·lit',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
-      maxZoom: 19
-    },
-    previewClass: 'preview-esri-satellite'
-  },
-  opentopo: {
-    id: 'opentopo',
-    name: 'OpenTopoMap (Relleu & Desnivells)',
-    desc: 'Mapa amb corbes de nivell topogràfiques per mesurar els pendents i desnivells de Girona.',
-    badge: 'Topogràfic',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    options: {
-      attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OSM</a> | Style: OpenTopoMap',
-      maxZoom: 17
-    },
-    previewClass: 'preview-opentopo'
-  }
-};
+// Base Map Style Controller (MapTiler Dataviz v4 - Auto Light / Dark)
+function getSystemMapMode() {
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
 
-// Automatic migration & default to Positron GL style
-function getInitialMapLayerKey() {
-  const saved = localStorage.getItem(CONFIG.mapLayerStorageKey);
-  const hasMigrated = localStorage.getItem('girocleta_positron_clean_v2');
-  if (!hasMigrated) {
-    localStorage.setItem('girocleta_positron_clean_v2', 'true');
-    localStorage.setItem(CONFIG.mapLayerStorageKey, 'positron');
-    return 'positron';
-  }
-  if (!saved || !MAP_LAYERS[saved]) {
-    localStorage.setItem(CONFIG.mapLayerStorageKey, 'positron');
-    return 'positron';
-  }
-  return saved;
+function getSystemMapStyleKey() {
+  return getSystemMapMode() === 'dark' ? 'dataviz-v4-dark' : 'dataviz-v4';
 }
 
 // Application State
 const state = {
   map: null,
   currentTileLayer: null,
-  currentLayerKey: getInitialMapLayerKey(),
+  currentLayerKey: getSystemMapStyleKey(),
   stations: [],
   stationMarkers: {},
   userMarker: null,
@@ -219,8 +109,8 @@ function initMap() {
     rotateControl: false
   }).setView(CONFIG.defaultCenter, CONFIG.defaultZoom);
 
-  // Apply saved or default tile layer
-  applyTileLayer(state.currentLayerKey, false);
+  // Apply MapTiler Dataviz style (automatic light / dark mode)
+  applyDatavizMapLayer(false);
 
   // Listen to map rotation changes to update compass needle
   state.map.on('rotate', updateCompassUI);
@@ -990,21 +880,9 @@ function bindUIEvents() {
     openPreferencesModal();
   });
 
-  // 5. Map Layers Switcher Button
-  document.getElementById('btn-nav-layers')?.addEventListener('click', () => {
-    setActiveNavBtn('btn-nav-layers');
-    openLayersModal();
-  });
-
   // Floating Map Controls (GPS Location & Rotation)
   document.getElementById('btn-map-locate')?.addEventListener('click', () => centerOnUserLocation(false));
   document.getElementById('btn-map-compass')?.addEventListener('click', resetMapOrientation);
-
-  // Layers Modal Close Buttons
-  document.getElementById('btn-close-layers')?.addEventListener('click', closeLayersModal);
-  document.getElementById('modal-layers-overlay')?.addEventListener('click', (e) => {
-    if (e.target.id === 'modal-layers-overlay') closeLayersModal();
-  });
 
   // iOS Safari Guide Modal Close Buttons
   document.getElementById('btn-close-ios-guide')?.addEventListener('click', closeIOSGuideModal);
@@ -1094,86 +972,50 @@ function showToast(msg) {
 }
 
 // ==========================================================================
-// Base Map Layers Controller & Customization
+// Base Map Layer Controller (MapTiler Dataviz v4 - Auto Light / Dark)
 // ==========================================================================
-function applyTileLayer(layerKey, notify = true) {
-  let actualKey = layerKey;
-  if (!MAP_LAYERS[actualKey]) {
-    actualKey = 'positron';
-  }
-  const layerCfg = MAP_LAYERS[actualKey];
+function applyDatavizMapLayer(notify = false) {
+  const mode = getSystemMapMode();
+  const isDark = mode === 'dark';
+  const styleParam = isDark ? 'dataviz-v4-dark' : 'dataviz-v4';
 
-  if (state.currentTileLayer && state.map.hasLayer(state.currentTileLayer)) {
+  if (state.currentTileLayer && state.map && state.map.hasLayer(state.currentTileLayer)) {
     state.map.removeLayer(state.currentTileLayer);
   }
 
-  // Handle CSS filter classes for Positron and Dark styles
-  const tilePane = state.map.getPane('tilePane');
+  // Remove any legacy CSS filter classes from tilePane
+  const tilePane = state.map ? state.map.getPane('tilePane') : null;
   if (tilePane) {
-    tilePane.classList.toggle('filter-positron', layerCfg.tileClass === 'filter-positron');
-    tilePane.classList.toggle('filter-dark', layerCfg.tileClass === 'filter-dark');
+    tilePane.classList.remove('filter-positron', 'filter-dark');
   }
 
-  state.currentTileLayer = L.tileLayer(layerCfg.url, layerCfg.options).addTo(state.map);
+  // High-performance MapTiler Dataviz tiles cached on Vercel CDN
+  state.currentTileLayer = L.tileLayer(`/tiles/${styleParam}/{z}/{x}/{y}.png`, {
+    maxZoom: 19,
+    minZoom: 11,
+    attribution: '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener">&copy; MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap</a> contributors'
+  });
 
-  if (state.currentTileLayer && state.currentTileLayer.bringToBack) {
-    state.currentTileLayer.bringToBack();
+  if (state.map) {
+    state.currentTileLayer.addTo(state.map);
+    if (state.currentTileLayer.bringToBack) {
+      state.currentTileLayer.bringToBack();
+    }
   }
 
-  state.currentLayerKey = actualKey;
-  localStorage.setItem(CONFIG.mapLayerStorageKey, actualKey);
-
-  renderLayersGrid();
+  state.currentLayerKey = styleParam;
 
   if (notify) {
-    showToast(`Estil de mapa: ${layerCfg.name}`);
+    showToast(isDark ? 'Mode fosc activat (MapTiler Dataviz Dark)' : 'Mode clar activat (MapTiler Dataviz)');
   }
 }
 
-function openLayersModal() {
-  renderLayersGrid();
-  const overlay = document.getElementById('modal-layers-overlay');
-  if (overlay) {
-    overlay.classList.add('open');
-    overlay.setAttribute('aria-hidden', 'false');
-  }
+// Automatically switch between MapTiler Dataviz Light & Dark on system change
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    applyDatavizMapLayer(false);
+  });
 }
-
-function closeLayersModal() {
-  const overlay = document.getElementById('modal-layers-overlay');
-  if (overlay) {
-    overlay.classList.remove('open');
-    overlay.setAttribute('aria-hidden', 'true');
-  }
-  if (document.getElementById('btn-nav-layers')?.classList.contains('active')) {
-    setActiveNavBtn('btn-nav-home');
-  }
-}
-
-function renderLayersGrid() {
-  const grid = document.getElementById('map-layers-grid');
-  if (!grid) return;
-
-  grid.innerHTML = Object.values(MAP_LAYERS).map(l => {
-    const isActive = l.id === state.currentLayerKey;
-    return `
-      <div class="layer-card ${isActive ? 'active' : ''}" data-layer="${l.id}" onclick="selectMapLayer('${l.id}')">
-        <div class="layer-preview-thumbnail ${l.previewClass}">
-          <div class="layer-preview-badge">${l.badge}</div>
-          ${isActive ? '<div class="layer-active-indicator"><i class="fa-solid fa-circle-check"></i> Actiu</div>' : ''}
-        </div>
-        <div class="layer-card-body">
-          <div class="layer-card-title">${l.name}</div>
-          <div class="layer-card-desc">${l.desc}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-window.selectMapLayer = function(layerKey) {
-  applyTileLayer(layerKey, true);
-};
 
 // ==========================================================================
 // Map Rotation & Compass
