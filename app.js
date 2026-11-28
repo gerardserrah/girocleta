@@ -990,7 +990,7 @@ function applyDatavizMapLayer(notify = false) {
   }
 
   // High-performance MapTiler Dataviz tiles cached on Vercel CDN
-  state.currentTileLayer = L.tileLayer(`/tiles/${styleParam}/{z}/{x}/{y}.png`, {
+  state.currentTileLayer = L.tileLayer(`/api/tile?style=${styleParam}&z={z}&x={x}&y={y}`, {
     maxZoom: 19,
     minZoom: 11,
     attribution: '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener">&copy; MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap</a> contributors'
